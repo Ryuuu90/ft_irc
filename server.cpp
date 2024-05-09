@@ -1,117 +1,104 @@
-#include <stdlib.h>
-#include <iostream>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/times.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <poll.h>
-#include <vector>
-#include <unistd.h>
+#include "server.hpp"
 
-#define BUFFER_SIZE 1024
-
-int main(int ac, char **av)
+Server::Server(int port, std::string password)
 {
-
-    int sockserv, sockcli;
-    struct  sockaddr_in seraddress, cliaddress;
-    std::vector<struct pollfd> fds;
-    struct pollfd npollfd;
-    char buff[BUFFER_SIZE];
-    if(ac != 3)
-    {
-        std::cerr << "Error: usage <port> <password>." << std::endl;
-        exit(1);
-    }
-    int port = std::atoi(av[1]);
-    if((sockserv = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    {
-        std::cerr << "Error: Socket creation fails." << std::endl;
-        exit(1);
-    }
-    int en = 1;
-    if(setsockopt(sockserv, SOL_SOCKET, SO_REUSEADDR, &en, sizeof(en)) == -1)
-    {
-        std::cerr << "Error: fcntl() failed." << std::endl;
-        exit(1);
-    }
-    if(fcntl(sockserv, F_SETFL, O_NONBLOCK) == -1)
-    {
-        std::cerr << "Error: fcntl() failed." << std::endl;
-        exit(1);
-    }
-    bzero(&seraddress, sizeof(seraddress));
-    seraddress.sin_family = AF_INET;
-    seraddress.sin_port = htons(port);
-    seraddress.sin_addr.s_addr = htonl(INADDR_ANY);
-    if(bind(sockserv, (struct sockaddr *) &seraddress, sizeof(seraddress)) == -1)
-    {
-        std::cerr << "Error: Binding the socket and the address of the server fails." << std::endl;
-        exit(1);
-    }
-    if(listen(sockserv, SOMAXCONN) == -1)
-    {
-        std::cerr << "Error: Listening to incoming connections fails." << std::endl;
-        exit(1);
-    }
-    bzero(&npollfd, sizeof(npollfd));
-    npollfd.fd = sockserv;
-    npollfd.events = POLLIN;
-    npollfd.revents = 0;
-    fds.push_back(npollfd);
+    this->port = port;
+    this->password = password;
+    this->passFlag = 0;
+    serverSocket();
+    std::cout << GREEN << "Server (" << this->sockserv << ") is connected." << RESET << std::endl;
+    std::cout << YELLOW << "The server is waiting for new connections..." << RESET << std::endl;
     while(true)
     {
-        std::cout << "ccc" << std::endl;
         if(poll(&fds[0], fds.size(), -1) == -1)
+            throw(std::runtime_error("Error: Faild to poll."));
+        for(size_t i = 0 ; i < this->fds.size(); i++)
         {
-            std::cerr << "Error: faild to poll." << std::endl;
-            exit(1);
-        }
-        for(int i  = 0; i < fds.size(); i++)
-        {
-            if(fds[i].revents & POLLIN)
+            if(this->fds[i].revents & POLLIN)
             {
-                if(fds[i].fd == sockserv)
-                {
-                    std::cout << "bbbb" << std::endl;
-                    socklen_t len = sizeof(cliaddress);
-                    if((sockcli = accept(sockserv, (struct sockaddr *) &cliaddress, &len)) < 0)
-                    {
-                        std::cerr << "Error: accepting the new client fails." << std::endl;
-                        exit(1);
-                    }
-                    if(fcntl(sockcli, F_SETFL, O_NONBLOCK) == -1)
-                    {
-                        std::cerr << "Error: fcntl() failed." << std::endl;
-                        exit(1);
-                    }
-                    npollfd.fd = sockcli;
-                    npollfd.events = POLLIN;
-                    npollfd.revents = 0;
-                    fds.push_back(npollfd);
-                }
+                if(this->fds[i].fd == this->sockserv)
+                    this->acceptClients();
                 else
-                {
-                    bzero(buff, BUFFER_SIZE);
-                    int bytes;
-                    if((bytes = recv(fds[i].fd, buff, sizeof(buff) - 1, 0)) <= 0)
-                    {
-                        std::cerr << "Client (" << fds[i].fd << ") Disconnected." << std::endl;
-                        close(fds[i].fd);
-                    }
-                    else
-                    {
-                        buff[bytes] = '\0';
-                        std::cout << "the data :" << buff << std::endl;
-                    }
-                }
+                    this->receiveData(i);
+
             }
         }
-        
     }
-    for(int j = 0; j < fds.size(); j++)
+}
+Server::~Server()
+{
+    for(size_t j = 0; j < fds.size(); j++)
         close(fds[j].fd);
+}
+void Server::serverSocket()
+{
+    if((this->sockserv = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+        throw(std::runtime_error( "Error: Socket creation failed."));
+    int en = 1;
+    if(setsockopt(this->sockserv, SOL_SOCKET, SO_REUSEADDR, &en, sizeof(en)) == -1)
+        throw(std::runtime_error( "Error: Reuse address failed."));
+    if(fcntl(this->sockserv, F_SETFL, O_NONBLOCK) == -1)
+        throw(std::runtime_error( "Error: fcntl() failed."));
+    bzero(&this->seraddress, sizeof(this->seraddress));
+    this->seraddress.sin_family = AF_INET;
+    this->seraddress.sin_port = htons(this->port);
+    this->seraddress.sin_addr.s_addr = htonl(INADDR_ANY);
+    if(bind(this->sockserv, (struct sockaddr *) &this->seraddress, sizeof(this->seraddress)) == -1)
+        throw(std::runtime_error( "Error: Binding the socket and the address of the server failed."));
+    if(listen(this->sockserv, SOMAXCONN) == -1)
+        throw(std::runtime_error( "Error: Listening to incoming connections failed."));
+    bzero(&this->npollfd, sizeof(this->npollfd));
+    this->npollfd.fd = this->sockserv;
+    this->npollfd.events = POLLIN;
+    this->npollfd.revents = 0;
+    fds.push_back(this->npollfd);
+}
+void Server::acceptClients()
+{
+    socklen_t len = sizeof(this->cliaddress);
+    if((this->sockcli = accept(this->sockserv, (struct sockaddr *) &this->cliaddress, &len)) < 0)
+    {
+        std::cerr << RED << "Error: Accepting the new client failed." << RESET << std::endl;
+        return;
+    }
+    if(fcntl(this->sockcli, F_SETFL, O_NONBLOCK) == -1)
+    {
+        std::cerr << RED << "Error: fcntl() failed." << RESET << std::endl;
+        return;
+    }
+    this->npollfd.fd = this->sockcli;
+    this->npollfd.events = POLLIN;
+    this->npollfd.revents = 0;
+    fds.push_back(this->npollfd);
+}
+void Server::receiveData(int index)
+{
+    bzero(this->buff, BUFFER_SIZE);
+    int rec;
+    if((rec = recv(this->fds[index].fd, this->buff, sizeof(this->buff) - 1, 0)) <= 0)
+    {
+        std::cerr << MAGENTA << "Client (" << this->fds[index].fd << ") Disconnected." << RESET << std::endl;
+        close(this->fds[index].fd);
+        this->fds.erase(this->fds.begin() + index);
+    }
+    else
+    {
+        this->buff[rec] = '\0';
+        char buffNl[1024];
+        int i;
+        for( i = 0; buff[i] != '\n'; i++)
+        {
+            buffNl[i] = buff[i];
+        }
+        buffNl[i] = '\0';
+        if(passFlag == 0 && password == buffNl)
+        {
+            std::cout << GREEN2 << "Client (" << this->sockcli << ") Connected." << RESET << std::endl;
+            passFlag = 1;
+        }
+        else if(passFlag == 1)
+            std::cout << CYAN << "the data :" << this->buff << RESET;
+        else
+            std::cerr << RED << "Password incorrect." << buffNl << RESET << std::endl;
+    }
 }

@@ -1,12 +1,13 @@
 NAME = Server
-SRC = server.cpp\
+SRC = Server.cpp\
+	Client.cpp\
 	main.cpp\
 
 OSRC = $(SRC:.cpp=.o)
 %.o : %.cpp
 	@c++ -Wall -Wextra -Werror -std=c++98  -c $(SRC)
 $(NAME) : $(OSRC)
-	@c++ $(OSRC) -o $(NAME)
+	@c++ -fsanitize=address -g3 $(OSRC) -o $(NAME)
 	@echo "\033[1;32mServer is ready to execute ✅\033[0m"
 all : $(NAME)
 clean :

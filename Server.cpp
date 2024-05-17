@@ -58,14 +58,14 @@ void Server::serverSocket()
 void Server::msgToClient(int fd, std::string msg)
 {
     std::stringstream ss;
-    ss << RED "<" << fd << ">" << msg << RESET;
+    ss << RED ": <" << fd << ">" << msg << RESET;
     msg = ss.str();
     send(fd, msg.c_str(), msg.size(), 0);
 }
 void Server::ParamMsgClient(int fd, std::string command , std::string msg)
 {
     std::stringstream ss;
-    ss << RED << "<" << fd << ">" << " <" << command << ">" << msg << RESET;
+    ss << RED << ": <" << fd << ">" << " <" << command << ">" << msg << RESET;
     msg = ss.str();
     send(fd, msg.c_str(), msg.size(), 0);
 }
@@ -92,6 +92,7 @@ bool Server::checkNickName(std::string nName)
     }
     return true;
 }
+#include <stdio.h>
 void Server::UserCommand(int fd, std::vector<std::string> &vec)
 {
     std::string msg;
@@ -105,7 +106,7 @@ void Server::UserCommand(int fd, std::vector<std::string> &vec)
     if(vec[0] == "USER" && vec.size() > 6)
         ParamMsgClient(fd, vec[0], " :Too much parameters\r\n");
     if((vec.size() == 5 || vec.size() == 6) && vec[0] == "USER" && Clients.find(fd) != Clients.end() && Clients.size() != 1)
-        msgToClient(fd, " 462 :You may not reregister\r\n");
+        msgToClient(fd, " 462 :You may not register\r\n");
     if(vec[0] == "USER" && (vec.size() == 5 || vec.size() == 6))
     {
         if(vec[2] != "0" || vec[3] != "*")
@@ -116,12 +117,17 @@ void Server::UserCommand(int fd, std::vector<std::string> &vec)
         {
             Clients[fd].userNameSetter(vec[1]);
             vec[4].erase(vec[4].begin());
-            if(!vec[5].empty())
-                Clients[fd].realNameSetter(vec[4] + " " + vec[5]);
-            else
+            if(vec[4].empty())
+            {
+                ParamMsgClient(fd, vec[0], " :Enter your realname.\r\n");
+                return;
+            }
+            else if(vec[5].empty())
                 Clients[fd].realNameSetter(vec[4]);
+            else
+                Clients[fd].realNameSetter(vec[4] + vec[5]);
             this->authenFlag++;
-            msg = "\033[1;32mUser gets registered with username '" + Clients[fd].userNameGetter() + "' and real name '" + Clients[fd].realNameGetter() + "'\033[0m\r\n";
+            msg = "\033[1;32mUser gets registered with username '" + Clients[fd].userNameGetter() + "' and realname '" + Clients[fd].realNameGetter() + "'\033[0m\r\n";
             send(fd, msg.c_str(), msg.size(), 0);
         }
     }
@@ -176,7 +182,7 @@ void Server::PassCommand(int fd, std::vector<std::string> &vec)
         send(fd, msg.c_str(), msg.size(), 0);
     }
     if(vec.size() != 2 && vec[0] == "PASS")
-        ParamMsgClient(fd, vec[0], " 461:Not enough parameters\r\n");
+        ParamMsgClient(fd, vec[0], " 461 :Not enough parameters\r\n");
     if(vec.size() == 2 && vec[0] == "PASS" && Clients.find(fd) != Clients.end() && Clients.size() != 1)
         msgToClient(fd, " 462 :You may not reregister\r\n");
     if(vec.size() == 2 && vec[0] == "PASS")
@@ -202,6 +208,7 @@ void Server::authentication(std::string buff, int index)
     std::istringstream ss2;
     std::string str;
     std::vector<std::string> vec;
+    vec.clear();
     while(ss >> str)
         vec.push_back(str);
     if(vec.empty())
@@ -274,13 +281,28 @@ void Server::receiveData(int index)
             std::vector<std::string> vec;
             std::stringstream ss(buff);
             std::string str;
+            std::cout<<"--->"<<buff<<std::endl;
             while(ss >> str)
+            {
+                if(str == "JOIN")
+                {
+                    ss>>str;
+                    // std::vector<Channel>::iterator it = find(Channels.begin(), Channels.end(), str);
+                    // int j = (it - Channels.begin()) / sizeof(it);
+                    // if(it == Channels.end())
+                    // {
+                    //     Channels.push_back(Channel(str));
+                    //     j=0;
+                    // }
+                    // Clients[index].join(Channels[j], index);
+                }
                 vec.push_back(str);
+            }
             if(vec.empty())
                 return;
             if(vec[0] == "PING" && vec.size() == 2)
             {
-                msg = "PONG";
+                msg = "PONG\r\n";
                 send(fds[index].fd, msg.c_str(), msg.size(), 0);
             }
         }

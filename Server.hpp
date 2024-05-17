@@ -2,7 +2,10 @@
 
 #include <stdlib.h>
 #include <iostream>
+#include <algorithm>
 #include <string.h>
+#include "Client.hpp"
+
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/times.h>
@@ -16,7 +19,8 @@
 #include <unistd.h>
 #include <map>
 #include <sstream>
-#include "Client.hpp"
+#include "Channel.hpp"
+#include "Operator.hpp"
 
 #define BUFFER_SIZE 1024
 
@@ -28,7 +32,9 @@
 # define RESET "\033[0m"
 # define CYAN "\033[1;36m"
 # define WHITE "\033[1;16m"
+# include "Channel.hpp"
 class Client;
+class Channel;
 class Server
 {
     private:
@@ -37,10 +43,11 @@ class Server
         std::string password;
         int sockserv, sockcli;
         struct  sockaddr_in seraddress, cliaddress;
-        std::vector<struct pollfd> fds;
+        std::vector<struct pollfd>fds; 
         struct pollfd npollfd;
         char buff[BUFFER_SIZE];
         std::map<int, Client> Clients;
+        std::vector<Channel> Channels;
         int authenFlag;
         std::string timeStr;
         Server();

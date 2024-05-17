@@ -1,6 +1,8 @@
 NAME = Server
-SRC = Server.cpp\
+SRC = Operator.cpp\
 	Client.cpp\
+	Server.cpp\
+	Channel.cpp\
 	main.cpp\
 
 OSRC = $(SRC:.cpp=.o)

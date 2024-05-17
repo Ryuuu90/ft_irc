@@ -1,7 +1,9 @@
-#pragma once
+#ifndef CLIENT_HPP
+#define CLIENT_HPP
 
 #include "Server.hpp"
 
+class Operator;
 class Client
 {
     private:
@@ -11,7 +13,7 @@ class Client
         std::string IpAddress;
     public:
         Client();
-        ~Client();
+        // void join(Channel &channel, int index);
         void nickNameSetter(std::string nName);
         void realNameSetter(std::string rName);
         void userNameSetter(std::string uName);
@@ -20,4 +22,9 @@ class Client
         std::string realNameGetter() const;
         std::string userNameGetter() const;
         std::string IpAddressGetter() const;
+        // Client& operator=(Client &client);
+        virtual ~Client();
+
 };
+
+#endif

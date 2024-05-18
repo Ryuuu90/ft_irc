@@ -3,7 +3,6 @@
 
 #include "Server.hpp"
 
-class Operator;
 class Client
 {
     private:
@@ -13,7 +12,6 @@ class Client
         std::string IpAddress;
     public:
         Client();
-        // void join(Channel &channel, int index);
         void nickNameSetter(std::string nName);
         void realNameSetter(std::string rName);
         void userNameSetter(std::string uName);
@@ -22,7 +20,7 @@ class Client
         std::string realNameGetter() const;
         std::string userNameGetter() const;
         std::string IpAddressGetter() const;
-        // Client& operator=(Client &client);
+        Client& operator=(Client &client);
         virtual ~Client();
 
 };

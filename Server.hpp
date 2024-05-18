@@ -20,7 +20,6 @@
 #include <map>
 #include <sstream>
 #include "Channel.hpp"
-#include "Operator.hpp"
 
 #define BUFFER_SIZE 1024
 

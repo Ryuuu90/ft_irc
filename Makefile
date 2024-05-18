@@ -1,6 +1,5 @@
 NAME = Server
-SRC = Operator.cpp\
-	Client.cpp\
+SRC = Client.cpp\
 	Server.cpp\
 	Channel.cpp\
 	main.cpp\

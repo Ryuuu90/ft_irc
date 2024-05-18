@@ -2,32 +2,18 @@
 
 Client::Client()
 {
-    nickName = "aaaqwq";
-    realName = "aaaqwq";
-    userName = "aaaqwq";
-    IpAddress = "qqqf";
+
 }
 
 Client::~Client()
 {
 }
 
-// void Client::join(Channel &channel, int index)
-// {
-//     if(channel.Clients.empty())
-//     {
-//         channel.Clients[index] = *this;
-//         channel.addOperand(*this, index);
-//     }
-//     else
-//         channel.Clients[index] = *this;
-    
-// }
-// Client& Client::operator=(Client &client)
-// {
-//     this->realNameSetter(client.nickNameGetter());
-//     return(*this);
-// }
+Client& Client::operator=(Client &client)
+{
+    this->realNameSetter(client.nickNameGetter());
+    return(*this);
+}
 
 void Client::nickNameSetter(std::string nName)
 {

@@ -160,6 +160,8 @@ void Server::NickCommand(int fd, std::vector<std::string> &vec)
             {
                 this->authenFlag++;
                 cli.nickNameSetter(vec[1]);
+                std::cout<<"--> NICK "<<vec[1]<<std::endl;
+                std::cout<<"--> NICK "<<cli.nickNameGetter()<<std::endl;
                 Clients[fd] = cli;
                 msg = "\033[1;32mRequesting the new nick " + Clients[fd].nickNameGetter() + "\r\n\033[0m";
                 send(fd, msg.c_str(), msg.size(), 0);
@@ -292,32 +294,34 @@ void Server::receiveData(int index)
                         // // if(it == Channels.end())
                         Channels[str]= Channel(str);
                         std::map<int, Client>::iterator it2 = Clients.find(fds[index].fd);
-                        // std::cout<<"index 1 : "<<it2->first<<std::endl;
-                        // std::cout<<"index  :"<<fds[index].fd<<" name: "<<Clients[fds[index].fd].nickNameGetter()<<std::endl;
+                        std::cout<<"index 1: "<<it2->first<<std::endl;
+                        std::cout<<"index  :"<<fds[index].fd<<" name: "<<Clients[fds[index].fd].nickNameGetter();
+                        std::cout<<" "<<Clients[fds[index].fd].realNameGetter();
+                        std::cout<<" "<<Clients[fds[index].fd].userNameGetter()<<std::endl;
 
                         Channels[str].join(it2->second, fds[index].fd);
 
-                        std::map<std::string, Channel>::iterator it3 ;
-                        for(it3= Channels.begin(); it3 != Channels.end(); it3++)
-                        {
-                            std::map<int, Client>::iterator it5 = it3->second.Clients.find(fds[index].fd);
-                            std::cout<<it3->first<<" ------ index inside channel clients "<<it5->first<<std::endl;
-                            // std::map<int, Client>::iterator it5oper = it3->second.operators.find(fds[index].fd);
-                            std::map<int, Client>::iterator it6 ;
-                            for(it6 = it3->second.operators.begin(); it6 != it3->second.operators.end(); it6++)
-                            {
-                                std::map<int, Client>::iterator it5 = it3->second.operators.find(fds[index].fd);
-                                std::cout<<it6->first<<" 888888888888 index inside channel  "<<it5->first<<std::endl;
-                            }
-                        }
-                        std::map<int, Client>::iterator it4 ;
-                        for(it4= Clients.begin(); it4 != Clients.end(); it4++)
-                        {
-                            std::cout<<it4->first<<" ***** "<<it4->second.nickName<<std::endl;
-                        }
-                        }
-                        vec.push_back(str);
+                        // std::map<std::string, Channel>::iterator it3 ;
+                        // for(it3= Channels.begin(); it3 != Channels.end(); it3++)
+                        // {
+                        //     std::map<int, Client>::iterator it5 = it3->second.Clients.find(fds[index].fd);
+                        //     std::cout<<it3->first<<" ------ index inside channel clients "<<it5->first<<std::endl;
+                        //     // std::map<int, Client>::iterator it5oper = it3->second.operators.find(fds[index].fd);
+                        //     std::map<int, Client>::iterator it6 ;
+                        //     for(it6 = it3->second.operators.begin(); it6 != it3->second.operators.end(); it6++)
+                        //     {
+                        //         std::map<int, Client>::iterator it5 = it3->second.operators.find(fds[index].fd);
+                        //         std::cout<<it6->first<<" 888888888888 index inside channel  "<<it5->first<<std::endl;
+                        //     }
+                        // }
+                        // std::map<int, Client>::iterator it4 ;
+                        // for(it4= Clients.begin(); it4 != Clients.end(); it4++)
+                        // {
+                        //     std::cout<<it4->first<<" ***** "<<it4->second.nickName<<std::endl;
+                        // }
                     }
+                        vec.push_back(str);
+                }
                 else if (str == "JDM")
                 {
                     Bot bot;

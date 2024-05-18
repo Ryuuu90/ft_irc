@@ -20,7 +20,7 @@ class Client
         std::string realNameGetter() const;
         std::string userNameGetter() const;
         std::string IpAddressGetter() const;
-        Client& operator=(Client &client);
+        // Client& operator=(Client &client);
         virtual ~Client();
 
 };

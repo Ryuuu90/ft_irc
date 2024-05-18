@@ -9,11 +9,11 @@ Client::~Client()
 {
 }
 
-Client& Client::operator=(Client &client)
-{
-    this->realNameSetter(client.nickNameGetter());
-    return(*this);
-}
+// Client& Client::operator=(Client &client)
+// {
+//     this->realNameSetter(client.nickNameGetter());
+//     return(*this);
+// }
 
 void Client::nickNameSetter(std::string nName)
 {

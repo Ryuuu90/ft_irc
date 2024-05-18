@@ -281,22 +281,43 @@ void Server::receiveData(int index)
             std::vector<std::string> vec;
             std::stringstream ss(buff);
             std::string str;
-            std::cout<<"--->"<<buff<<std::endl;
             while(ss >> str)
             {
                 if(str == "JOIN")
                 {
-                    ss>>str;
-                    // std::vector<Channel>::iterator it = find(Channels.begin(), Channels.end(), str);
-                    // int j = (it - Channels.begin()) / sizeof(it);
-                    // if(it == Channels.end())
-                    // {
-                    //     Channels.push_back(Channel(str));
-                    //     j=0;
-                    // }
-                    // Clients[index].join(Channels[j], index);
-                }
-                vec.push_back(str);
+                    while(ss>>str)
+                    {
+                        // std::cout<<str<<std::endl;
+                        // std::map<std::string, Channel>::iterator it = Channels.find(str);
+                        // // if(it == Channels.end())
+                        Channels[str]= Channel(str);
+                        std::map<int, Client>::iterator it2 = Clients.find(fds[index].fd);
+                        // std::cout<<"index 1 : "<<it2->first<<std::endl;
+                        // std::cout<<"index  :"<<fds[index].fd<<" name: "<<Clients[fds[index].fd].nickNameGetter()<<std::endl;
+
+                        Channels[str].join(it2->second, fds[index].fd);
+
+                        std::map<std::string, Channel>::iterator it3 ;
+                        for(it3= Channels.begin(); it3 != Channels.end(); it3++)
+                        {
+                            std::map<int, Client>::iterator it5 = it3->second.Clients.find(fds[index].fd);
+                            std::cout<<it3->first<<" ------ index inside channel clients "<<it5->first<<std::endl;
+                            // std::map<int, Client>::iterator it5oper = it3->second.operators.find(fds[index].fd);
+                            std::map<int, Client>::iterator it6 ;
+                            for(it6 = it3->second.operators.begin(); it6 != it3->second.operators.end(); it6++)
+                            {
+                                std::map<int, Client>::iterator it5 = it3->second.operators.find(fds[index].fd);
+                                std::cout<<it6->first<<" 888888888888 index inside channel  "<<it5->first<<std::endl;
+                            }
+                        }
+                        std::map<int, Client>::iterator it4 ;
+                        for(it4= Clients.begin(); it4 != Clients.end(); it4++)
+                        {
+                            std::cout<<it4->first<<" ***** "<<it4->second.nickName<<std::endl;
+                        }
+                        }
+                        vec.push_back(str);
+                    }
             }
             if(vec.empty())
                 return;

@@ -46,7 +46,7 @@ class Server
         struct pollfd npollfd;
         char buff[BUFFER_SIZE];
         std::map<int, Client> Clients;
-        std::vector<Channel> Channels;
+        std::map<std::string, Channel> Channels;
         int authenFlag;
         std::string timeStr;
         Server();

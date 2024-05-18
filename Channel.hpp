@@ -7,10 +7,7 @@ class Client;
 class Channel
 {
 	private:
-        std::string name;
-        std::map<int , Client> Clients;
 		std::map<int , Client> superClients; 
-        std::map<int , Client> operators;
         bool invite;
         bool keyPass;
         std::string password;
@@ -18,6 +15,9 @@ class Channel
         unsigned int limits;
 
 	public:
+        std::map<int , Client> operators;
+        std::map<int , Client> Clients;
+        std::string name;
 		Channel();
 		Channel(std::string);
 		~Channel();

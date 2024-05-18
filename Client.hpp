@@ -6,11 +6,11 @@
 class Client
 {
     private:
-        std::string nickName;
         std::string realName;
         std::string userName;
         std::string IpAddress;
     public:
+        std::string nickName;
         Client();
         void nickNameSetter(std::string nName);
         void realNameSetter(std::string rName);

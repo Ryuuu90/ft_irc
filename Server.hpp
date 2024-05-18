@@ -32,6 +32,8 @@
 # define CYAN "\033[1;36m"
 # define WHITE "\033[1;16m"
 # include "Channel.hpp"
+#include "bot.hpp"
+
 class Client;
 class Channel;
 class Server

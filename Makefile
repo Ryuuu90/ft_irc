@@ -3,6 +3,7 @@ SRC = Client.cpp\
 	Server.cpp\
 	Channel.cpp\
 	main.cpp\
+	bot.cpp\
 
 OSRC = $(SRC:.cpp=.o)
 %.o : %.cpp

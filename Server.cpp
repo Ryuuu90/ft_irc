@@ -318,6 +318,12 @@ void Server::receiveData(int index)
                         }
                         vec.push_back(str);
                     }
+                else if (str == "JDM")
+                {
+                    Bot bot;
+                    msg = "\033[0;35mJDMbot:\033[0;36m " + bot.getRandomFact() + "\033[0m\r\n";
+                    send(fds[index].fd, msg.c_str(), msg.size(), 0);
+                }
             }
             if(vec.empty())
                 return;

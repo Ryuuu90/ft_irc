@@ -294,10 +294,7 @@ void Server::receiveData(int index)
                         // // if(it == Channels.end())
                         Channels[str]= Channel(str);
                         std::map<int, Client>::iterator it2 = Clients.find(fds[index].fd);
-                        std::cout<<"index 1: "<<it2->first<<std::endl;
-                        std::cout<<"index  :"<<fds[index].fd<<" name: "<<Clients[fds[index].fd].nickNameGetter();
-                        std::cout<<" "<<Clients[fds[index].fd].realNameGetter();
-                        std::cout<<" "<<Clients[fds[index].fd].userNameGetter()<<std::endl;
+
 
                         Channels[str].join(it2->second, fds[index].fd);
 
@@ -321,6 +318,26 @@ void Server::receiveData(int index)
                         // }
                     }
                         vec.push_back(str);
+                }
+                else if(str == "PRIVMSG")
+                {
+                    ss>>str;
+                    std::map<int ,Client>::iterator it8;
+                    for(it8 = Clients.begin(); it8 != Clients.end(); it8++)
+                    {
+                        std::cout<<it8->second.nickNameGetter()<<std::endl;
+                        if (!it8->second.nickNameGetter().compare(str))
+                        {
+                            ss >> str;
+                            std::cout<<str<<" haaaa "<<it8->first<<std::endl;
+                            std::string mm = str + "\r\n";
+                            send(it8->first, mm.c_str(), mm.size(), 0);
+                            break;
+                        }
+                        
+                    }
+                    if(it8 == Clients.end())
+                        send(fds[index].fd,"destinataire unknown!!\n",24,0);
                 }
                 else if (str == "JDM")
                 {

@@ -244,6 +244,52 @@ void Server::acceptClients()
     std::string msg = "\033[1;35mPlease enter your password :\033[0m\r\n";
     send(npollfd.fd, msg.c_str(), msg.size(), 0);
 }
+
+std::vector<std::vector<std::string> > &split_Channels(std::string input, std::vector<std::vector<std::string> > &vect)
+{
+    std::vector<std::string>channels;
+    std::vector<std::string>channelsParams;
+    vect.push_back(channels);
+    vect.push_back(channelsParams);
+	std::cout<<"before while "<<input<<std::endl;
+    std::stringstream ss(input);
+    int k =0;
+    while(ss>>input)
+    {
+		std::cout<<"input to push "<<input<<std::endl;
+        if(input[0] == '#')
+        {
+            if (input.find(',') != std::string::npos)
+            {
+                size_t i = 0;
+                std::string channel;
+                while(i < input.size())
+                {
+                    if(input[i] == ',')
+                    {
+                        channel = input.substr(k,i);
+                        vect[0].push_back(channel);
+                        k = i + 1;
+                    }
+                    i++;
+                }
+                channel = input.substr(k,i);
+				std::cout<<"push back in channels name "<<input<<std::endl;
+                vect[0].push_back(channel);
+            }
+            else
+                {vect[0].push_back(input);
+				std::cout<<"push back in channels name "<<input<<std::endl;}
+        }
+        else
+        {
+			std::cout<<"push back in joinparams "<<input<<std::endl;
+			vect[1].push_back(input);
+		}
+    }
+    return(vect);
+}
+
 void Server::receiveData(int index)
 {
     bzero(this->buff, BUFFER_SIZE);
@@ -283,69 +329,132 @@ void Server::receiveData(int index)
             std::vector<std::string> vec;
             std::stringstream ss(buff);
             std::string str;
-            while(ss >> str)
+            ss >> str;
+            if(str == "JOIN")
             {
-                if(str == "JOIN")
                 {
-                    while(ss>>str)
+                    std::vector<std::vector<std::string> > params;
+					std::string params_str;
+					std::getline(ss,params_str);
+                    params = split_Channels(params_str,params);
+					size_t j= 0;
+					std::cout<<"channels :"<<std::endl;
+					while(j < params.size())
+					{
+						size_t l = 0;
+						while(l < params[j].size())
+						{
+							std::cout<<params[j][l]<<std::endl;
+							l++;
+						}
+						j++;
+						if(j == 1)
+							std::cout<<"params :"<<std::endl;
+					}
+					if(params[0].empty())
+					{
+						send(fds[index].fd,"bad join input !! \r\n",21,0);
+						return;
+					}
+					else
                     {
-                        // std::cout<<str<<std::endl;
-                        // std::map<std::string, Channel>::iterator it = Channels.find(str);
-                        // // if(it == Channels.end())
-                        Channels[str]= Channel(str);
-                        std::map<int, Client>::iterator it2 = Clients.find(fds[index].fd);
-
-
-                        Channels[str].join(it2->second, fds[index].fd);
-
-                        // std::map<std::string, Channel>::iterator it3 ;
-                        // for(it3= Channels.begin(); it3 != Channels.end(); it3++)
-                        // {
-                        //     std::map<int, Client>::iterator it5 = it3->second.Clients.find(fds[index].fd);
-                        //     std::cout<<it3->first<<" ------ index inside channel clients "<<it5->first<<std::endl;
-                        //     // std::map<int, Client>::iterator it5oper = it3->second.operators.find(fds[index].fd);
-                        //     std::map<int, Client>::iterator it6 ;
-                        //     for(it6 = it3->second.operators.begin(); it6 != it3->second.operators.end(); it6++)
-                        //     {
-                        //         std::map<int, Client>::iterator it5 = it3->second.operators.find(fds[index].fd);
-                        //         std::cout<<it6->first<<" 888888888888 index inside channel  "<<it5->first<<std::endl;
-                        //     }
-                        // }
-                        // std::map<int, Client>::iterator it4 ;
-                        // for(it4= Clients.begin(); it4 != Clients.end(); it4++)
-                        // {
-                        //     std::cout<<it4->first<<" ***** "<<it4->second.nickName<<std::endl;
-                        // }
-                    }
-                        vec.push_back(str);
+						size_t i = 0;
+						size_t k = 0;
+                        while(i < params[0].size())
+						{
+							std::map<std::string, Channel>::iterator it = Channels.find(params[0][i]);
+							if(it == Channels.end())
+							{
+								try
+								{
+									Channels[params[0][i]]= Channel(params[0][i]);
+								}
+								catch(std::exception &e)
+								{
+									std::cout<<e.what()<<std::endl;
+									return;
+								}
+							}
+							std::map<int, Client>::iterator it2 = Clients.find(fds[index].fd);
+							std::string input;
+							std::getline(ss, input);
+							try
+							{
+								Channels[params[0][i]].join(it2->second, fds[index].fd, params[1], k);
+								if(Channels[params[0][i]].keyPass)
+									k++;
+							}
+							catch(std::exception &e)
+							{
+								std::cout<<e.what()<<std::endl;
+							}
+							i++;
+						}
+					}
+					params.clear();
                 }
-                else if(str == "PRIVMSG")
+                    
+            }
+            else if(str == "MODE")
+            {
+                ss>>str;
+                std::map<std::string, Channel>::iterator it2 = Channels.find(str);
+                if (it2 == Channels.end()){}
+                else
                 {
-                    ss>>str;
-                    std::map<int ,Client>::iterator it8;
-                    for(it8 = Clients.begin(); it8 != Clients.end(); it8++)
+                    std::string channelName = str;
+                    try
                     {
-                        std::cout<<it8->second.nickNameGetter()<<std::endl;
-                        if (!it8->second.nickNameGetter().compare(str))
-                        {
-                            ss >> str;
-                            std::cout<<str<<" haaaa "<<it8->first<<std::endl;
-                            std::string mm = str + "\r\n";
-                            send(it8->first, mm.c_str(), mm.size(), 0);
-                            break;
-                        }
-                        
+                        if(Channels.find(channelName) == Channels.end())
+                            throw(std::invalid_argument(Clients[fds[index].fd].nickNameGetter() + " " + channelName + " :No such channel\r\n"));
                     }
-                    if(it8 == Clients.end())
-                        send(fds[index].fd,"destinataire unknown!!\n",24,0);
-                }
-                else if (str == "JDM")
-                {
-                    Bot bot;
-                    msg = "\033[0;35mJDMbot:\033[0;36m " + bot.getRandomFact() + "\033[0m\r\n";
-                    send(fds[index].fd, msg.c_str(), msg.size(), 0);
+                    catch(std::invalid_argument &e)
+                    {
+                        std::stringstream sserr;
+                        sserr << ERR_NOSUCHCHANNEL<<" "<< e.what();
+                        std::string errmsg = sserr.str();
+                        send(fds[index].fd, errmsg.c_str(),errmsg.size(),0);
+                    }
+                    std::string input;
+                    std::getline(ss,input);
+                    try
+                    {
+                        Channels[channelName].mode(input, fds[index].fd);
+                    }
+                    catch(const std::exception& e)
+                    {
+                        std::cerr << e.what() << '\n';
+                    }
+                    std::cout<<"bool invite "<<Channels[channelName].invite<<" keypass "<<Channels[channelName].password<<" limits "<<Channels[channelName].limits<<std::endl;
                 }
             }
+            else if(str == "PRIVMSG")
+            {
+                ss>>str;
+                std::map<int ,Client>::iterator it8;
+                for(it8 = Clients.begin(); it8 != Clients.end(); it8++)
+                {
+                    std::cout<<it8->second.nickNameGetter()<<" ";
+                    if (!it8->second.nickNameGetter().compare(str))
+                    {
+                        ss >> str;
+                        std::cout<<str<<" haaaa "<<it8->first<<std::endl;
+                        std::string mm = str + "\r\n";
+                        send(it8->first, mm.c_str(), mm.size(), 0);
+                        break;
+                    }
+                    
+                }
+                if(it8 == Clients.end())
+                    send(fds[index].fd,"destinataire unknown!!\r\n",25,0);
+            }
+            else if (str == "JDM")
+            {
+                Bot bot;
+                msg = "\033[0;35mJDMbot:\033[0;36m " + bot.getRandomFact() + "\033[0m\r\n";
+                send(fds[index].fd, msg.c_str(), msg.size(), 0);
+            }
+            vec.push_back(str);
             if(vec.empty())
                 return;
             if(vec[0] == "PING" && vec.size() == 2)

@@ -7,21 +7,25 @@ class Client;
 class Channel
 {
 	private:
-		std::map<int , Client> superClients; 
-        bool invite;
-        bool keyPass;
-        std::string password;
-		std::string topic;
-        unsigned int limits;
+		std::map<int , Client> superClients;
+		std::map<int , Client> inviteCLients; 
 
 	public:
+		std::string topic;
+        unsigned int limits;
+		bool restrictionsTOPIC;
+        std::string password;
+        bool keyPass;
+		bool limit;
+        bool invite;
         std::map<int , Client> operators;
         std::map<int , Client> Clients;
         std::string name;
 		Channel();
 		Channel(std::string);
 		~Channel();
-		void join(Client &client, int index);
+		void join(Client &client, int index, std::vector<std::string> params, size_t &paramsIndex);
+		void mode(std::string, int index);
 		unsigned int	get_limit()const;
         void	set_limit(unsigned int l);
 		std::string	get_topic()const;

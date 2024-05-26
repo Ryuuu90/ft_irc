@@ -33,7 +33,7 @@
 # define WHITE "\033[1;16m"
 # include "Channel.hpp"
 #include "bot.hpp"
-
+#define ERR_NOSUCHCHANNEL 403
 class Client;
 class Channel;
 class Server

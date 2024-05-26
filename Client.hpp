@@ -10,6 +10,7 @@ class Client
         std::string userName;
         std::string IpAddress;
     public:
+        bool operat;
         std::string nickName;
         Client();
         void nickNameSetter(std::string nName);

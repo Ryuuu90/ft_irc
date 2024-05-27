@@ -4,7 +4,7 @@ Server::Server(int port, std::string password)
 {
     this->port = port;
     this->password = password;
-    this->passFlag = 0;
+    this->joinFlag = 0;
     time_t currentTime = time(NULL);
     this->timeStr = ctime(&currentTime);
     this->timeStr.erase(this->timeStr.end() - 1);
@@ -241,7 +241,9 @@ void Server::acceptClients()
     this->authenFlag = 0;
     fds.push_back(this->npollfd);
     Clients[npollfd.fd].IpAddressSetter(inet_ntoa(cliaddress.sin_addr));
-    std::string msg = "\033[1;35mPlease enter your password :\033[0m\r\n";
+    std::string msg = SERVER_NAME;
+    send(npollfd.fd, msg.c_str(), msg.size(), 0);
+    msg = "\033[1;35mPlease enter your password :\033[0m\r\n";
     send(npollfd.fd, msg.c_str(), msg.size(), 0);
 }
 
@@ -289,7 +291,23 @@ std::vector<std::vector<std::string> > &split_Channels(std::string input, std::v
     }
     return(vect);
 }
-
+bool Server::checkControlD(int rec)
+{
+    if(this->buff[rec - 1] != '\n')
+    {
+        this->joinFlag = 1;
+        this->join = buff;
+        return true;
+    }
+    if(this->joinFlag == 1)
+    {
+        this->join = this->join + buff;
+        this->joinFlag = 0;
+    }
+    else
+        this->join = buff;
+    return false;
+}
 void Server::receiveData(int index)
 {
     bzero(this->buff, BUFFER_SIZE);
@@ -304,9 +322,11 @@ void Server::receiveData(int index)
     {
         std::string msg;
         this->buff[rec] = '\0';
-        std::cout << buff << std::endl;
+        if(checkControlD(rec))
+            return;
+        std::cout << this->join << std::endl;
         if(this->authenFlag < 3)
-            authentication(this->buff, index);
+            authentication(this->join, index);
         if(this->authenFlag == 3)
         {
 

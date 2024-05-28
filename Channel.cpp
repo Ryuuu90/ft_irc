@@ -44,6 +44,19 @@ Channel::Channel(std::string Name)
 }
 Channel::~Channel(){}
 
+int check_modes(std::string mode)
+{
+    size_t i = 1;
+    std::string str = "ioltk";
+    while(i < mode.size())
+    {
+        if(str.find(mode[i]) == std::string::npos)
+            return(0);
+        i++;
+    }
+    return(1);
+}
+
 std::vector<std::vector<std::string> > &split_input(std::string input ,std::vector<std::vector<std::string> > &vect)
 {
     std::stringstream ss(input);
@@ -54,12 +67,17 @@ std::vector<std::vector<std::string> > &split_input(std::string input ,std::vect
     while(ss >> input)
     {
         if(input[0] == '+' || input[0] == '-')
+        {
+            if(!check_modes(input))
+                throw(std::invalid_argument(""));
             vect[0].push_back(input);
+        }
         else
             vect[1].push_back(input);
     }
     return(vect);
 }
+
 
 void Channel::mode(std::string input, int index)
 {
@@ -69,7 +87,8 @@ void Channel::mode(std::string input, int index)
         throw(std::invalid_argument("Not valide operator!!\r\n"));
     std::vector<std::vector<std::string> > vect;
     vect = split_input(input,vect);
-
+    if(vect[0].empty())
+        throw(std::logic_error(""));
     size_t i = 0;
     while (i < vect.size())
     {
@@ -138,18 +157,60 @@ void Channel::mode(std::string input, int index)
                         k++;
                     }
                 }
-                else
-                    ;
                 j++;
             }
         }
-        else
-            ;
-        i++;
-        // else if(modes[i][j] == '-')
-        // {
+        else if(vect[0][i][j] == '-')
+        {
+            j++;
+            while(j < vect[0][i].size() && (vect[0][i][j] != '-' && vect[0][i][j] != '+'))
+            {
+                if(vect[0][i][j] == 'i')
+                    invite = false;
+                else if(vect[0][i][j] == 't')
+				{
+					restrictionsTOPIC = false;
+					// if(!vect[1].empty() && k < vect[1].size())
+					// {
+                    //     topic=vect[1][k];
+                    //     k++;
+                    // }
+				}
+                else if(vect[0][i][j] == 'k')
+                {
+                    keyPass = false;
+                    password = "";
+                    if(!vect[1].empty() && k < vect[1].size())
+                    {
+                        password = vect[1][k];
+                        k++;
+                    }
+                }
+                else if(vect[0][i][j] == 'o')
+                {
+                    std::map<int, Client>::iterator it;
+                    for (it = Clients.begin(); it != Clients.end() ; it++)
+                    {
+                        if (k < vect[1].size() && (it->second.nickNameGetter() == vect[1][k]))
+                        {
+                            operators.erase(it);
+                            k++;
+                            break;
+                        }
+                    }
+                    if (it == Clients.end())
+                        throw(std::logic_error(""));
+                }
+                else if(vect[0][i][j] == 'l')
+                {
+                    limit = false;
+                    limits = -1;
+                }
+                j++;
+            }
 
-        // }
+        }
+        i++;
     }
 
  std::cout<<"bool invite "<<invite<<" keypass "<<password<<" bool key "<<keyPass<<" limits "<<limits<<std::endl;

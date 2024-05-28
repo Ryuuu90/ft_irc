@@ -250,12 +250,13 @@ void Server::acceptClients()
 std::vector<std::vector<std::string> > &split_Channels(std::string input, std::vector<std::vector<std::string> > &vect)
 {
     std::vector<std::string>channels;
-    std::vector<std::string>channelsParams;
+    std::vector<std::string>channelsKeys;
     vect.push_back(channels);
-    vect.push_back(channelsParams);
+    vect.push_back(channelsKeys);
 	std::cout<<"before while "<<input<<std::endl;
     std::stringstream ss(input);
     int k =0;
+    int l = 0;
     while(ss>>input)
     {
 		std::cout<<"input to push "<<input<<std::endl;
@@ -285,12 +286,32 @@ std::vector<std::vector<std::string> > &split_Channels(std::string input, std::v
         }
         else
         {
-			std::cout<<"push back in joinparams "<<input<<std::endl;
-			vect[1].push_back(input);
+			if (input.find(',') != std::string::npos)
+            {
+                size_t i = 0;
+                std::string key;
+                while(i < input.size())
+                {
+                    if(input[i] == ',')
+                    {
+                        key = input.substr(l,i);
+                        vect[1].push_back(key);
+                        l = i + 1;
+                    }
+                    i++;
+                }
+                key = input.substr(l,i);
+				std::cout<<"push back in keys "<<input<<std::endl;
+                vect[1].push_back(key);
+            }
+            else
+                {vect[1].push_back(input);
+				std::cout<<"push back in channels name "<<input<<std::endl;}
 		}
     }
     return(vect);
 }
+
 bool Server::checkControlD(int rec)
 {
     if(this->buff[rec - 1] != '\n')

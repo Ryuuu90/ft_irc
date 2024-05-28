@@ -477,9 +477,17 @@ void Server::receiveData(int index)
                 {
                     if(Channels.find(str) != Channels.end())
                     {
+
+                        if(Channels[str].operators.find(fds[index].fd) == Channels[str].operators.end())
+                        {
+                            send(fds[index].fd,"You are not an operator of this channel\r\n",42,0);
+                            return;
+                        }
+
                         int flag = 0;
                         std::string str2;
                         ss >> str2;
+
                         std::map<int, Client>::iterator itClient;
                         for(itClient = Channels[str].Clients.begin(); itClient != Channels[str].Clients.end(); itClient++)
                         {

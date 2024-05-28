@@ -105,8 +105,8 @@ void Server::UserCommand(int fd, std::vector<std::string> &vec)
         ParamMsgClient(fd, vec[0], " 461 :Not enough parameters\r\n");
     if(vec[0] == "USER" && vec.size() > 6)
         ParamMsgClient(fd, vec[0], " :Too much parameters\r\n");
-    if((vec.size() == 5 || vec.size() == 6) && vec[0] == "USER" && Clients.find(fd) != Clients.end() && Clients.size() != 1)
-        msgToClient(fd, " 462 :You may not register\r\n");
+    // if((vec.size() == 5 || vec.size() == 6) && vec[0] == "USER" && Clients.find(fd) != Clients.end() && Clients.size() != 1)
+    //     msgToClient(fd, " 462 :You may not reregister\r\n");
     if(vec[0] == "USER" && (vec.size() == 5 || vec.size() == 6))
     {
         if(vec[2] != "0" || vec[3] != "*")
@@ -122,11 +122,12 @@ void Server::UserCommand(int fd, std::vector<std::string> &vec)
                 ParamMsgClient(fd, vec[0], " :Enter your realname.\r\n");
                 return;
             }
-            else if(vec[5].empty())
+            else if(vec.size() == 5)
                 Clients[fd].realNameSetter(vec[4]);
             else
-                Clients[fd].realNameSetter(vec[4] + vec[5]);
+                Clients[fd].realNameSetter(vec[4] + " " + vec[5]);
             this->authenFlag++;
+            std::cout << GREEN << "User gets registered successfully." << RESET << std::endl;
             msg = "\033[1;32mUser gets registered with username '" + Clients[fd].userNameGetter() + "' and realname '" + Clients[fd].realNameGetter() + "'\033[0m\r\n";
             send(fd, msg.c_str(), msg.size(), 0);
         }
@@ -163,6 +164,7 @@ void Server::NickCommand(int fd, std::vector<std::string> &vec)
                 std::cout<<"--> NICK "<<vec[1]<<std::endl;
                 std::cout<<"--> NICK "<<cli.nickNameGetter()<<std::endl;
                 Clients[fd] = cli;
+                std::cout << GREEN << "Nickname added successfully." << RESET << std::endl;
                 msg = "\033[1;32mRequesting the new nick " + Clients[fd].nickNameGetter() + "\r\n\033[0m";
                 send(fd, msg.c_str(), msg.size(), 0);
             }
@@ -185,10 +187,14 @@ void Server::PassCommand(int fd, std::vector<std::string> &vec)
     }
     if(vec.size() != 2 && vec[0] == "PASS")
         ParamMsgClient(fd, vec[0], " 461 :Not enough parameters\r\n");
-    if(vec.size() == 2 && vec[0] == "PASS" && Clients.find(fd) != Clients.end() && Clients.size() != 1)
-        msgToClient(fd, " 462 :You may not reregister\r\n");
+    // if(vec.size() == 2 && vec[0] == "PASS" && Clients.find(fd) != Clients.end() && Clients.size() != 1)
+    // {    
+    //     msgToClient(fd, " 462 :You may not reregister\r\n");
+    //     return;
+    // }
     if(vec.size() == 2 && vec[0] == "PASS")
     {
+        std::cout << YELLOW << "'" << fd << "'" << RESET << std::endl;
         if(vec[1] == this->password)
         {
             this->authenFlag++;
@@ -240,7 +246,7 @@ void Server::acceptClients()
     this->npollfd.revents = 0;
     this->authenFlag = 0;
     fds.push_back(this->npollfd);
-    Clients[npollfd.fd].IpAddressSetter(inet_ntoa(cliaddress.sin_addr));
+    // Clients[npollfd.fd].IpAddressSetter(inet_ntoa(cliaddress.sin_addr));
     std::string msg = SERVER_NAME;
     send(npollfd.fd, msg.c_str(), msg.size(), 0);
     msg = "\033[1;35mPlease enter your password :\033[0m\r\n";
@@ -573,7 +579,8 @@ void Server::receiveData(int index)
             vec.push_back(str);
             if(vec.empty())
                 return;
-            if(vec[0] == "PING" && vec.size() == 2)
+            std::cout << RED << vec[0] << RESET << std::endl;
+            if(vec[0] == "PING")
             {
                 msg = "PONG\r\n";
                 send(fds[index].fd, msg.c_str(), msg.size(), 0);

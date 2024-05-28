@@ -408,6 +408,7 @@ void Server::receiveData(int index)
 							{
 								try
 								{
+                                    std::cout<<"test TEST"<<std::endl;
 									Channels[params[0][i]]= Channel(params[0][i]);
 								}
 								catch(std::exception &e)
@@ -472,22 +473,50 @@ void Server::receiveData(int index)
             else if(str == "PRIVMSG")
             {
                 ss>>str;
-                std::map<int ,Client>::iterator it8;
-                for(it8 = Clients.begin(); it8 != Clients.end(); it8++)
+                std::cout<<"--->"<<str<<std::endl;
+                if(str[0] == '#')
                 {
-                    std::cout<<it8->second.nickNameGetter()<<" ";
-                    if (!it8->second.nickNameGetter().compare(str))
+                    if(Channels.find(str) != Channels.end())
                     {
-                        ss >> str;
-                        std::cout<<str<<" haaaa "<<it8->first<<std::endl;
-                        std::string mm = str + "\r\n";
-                        send(it8->first, mm.c_str(), mm.size(), 0);
-                        break;
+                        if(Channels[str].Clients.find(fds[index].fd) == Channels[str].Clients.end())
+                        {
+                            send(fds[index].fd,"You're not part of this channel\r\n",34,0);
+                            return;
+                        }
+                        std::cout<<"--->"<<"lqaha"<<std::endl;
+                        std::string line;
+                        std::getline(ss,line);
+                        std::cout<<"--->"<<str<<std::endl;
+                        std::string msg = line + "\r\n";
+                        std::map<int, Client>::iterator IT1;
+                        std::cout<<"--->"<<Channels[str].Clients.begin()->second.nickNameGetter()<<std::endl;
+                        for(IT1 = Channels[str].Clients.begin(); IT1 != Channels[str].Clients.end(); IT1++)
+                        {
+                            std::cout<<"--->"<<IT1->first<<std::endl;
+                            if(IT1->first != fds[index].fd)
+                                send(IT1->first,msg.c_str(),msg.size(),0);
+                        }
                     }
-                    
                 }
-                if(it8 == Clients.end())
-                    send(fds[index].fd,"destinataire unknown!!\r\n",25,0);
+                else
+                {
+                    std::map<int ,Client>::iterator it8;
+                    for(it8 = Clients.begin(); it8 != Clients.end(); it8++)
+                    {
+                        std::cout<<it8->second.nickNameGetter()<<" ";
+                        if (!it8->second.nickNameGetter().compare(str))
+                        {
+                            ss >> str;
+                            std::cout<<str<<" haaaa "<<it8->first<<std::endl;
+                            std::string mm = str + "\r\n";
+                            send(it8->first, mm.c_str(), mm.size(), 0);
+                            break;
+                        }
+                        
+                    }
+                    if(it8 == Clients.end())
+                        send(fds[index].fd,"destinataire unknown!!\r\n",25,0);
+                }
             }
             else if (str == "JDM")
             {

@@ -7,7 +7,6 @@ class Client;
 class Channel
 {
 	private:
-		std::map<int , Client> superClients;
 		std::map<int , Client> inviteCLients; 
 
 	public:

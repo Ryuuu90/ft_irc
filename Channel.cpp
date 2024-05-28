@@ -116,11 +116,11 @@ void Channel::mode(std::string input, int index)
                 else if(vect[0][i][j] == 't')
 				{
 					restrictionsTOPIC = true;
-					if(!vect[1].empty() && k < vect[1].size())
-					{
-                        topic=vect[1][k];
-                        k++;
-                    }
+					// if(!vect[1].empty() && k < vect[1].size())
+					// {
+                    //     topic=vect[1][k];
+                    //     k++;
+                    // }
 				}
                 else if(vect[0][i][j] == 'k')
                 {
@@ -251,6 +251,8 @@ void Channel::join(Client &client, int index, std::vector<std::string> params, s
 	if(Clients.empty())
         operators[index] = client;
     if(Clients.find(index) == Clients.end())
+    {
         Clients[index] = client;
-	std::cout<<"hahowa fost channel "<<Clients[index].nickNameGetter()<<std::endl;
+	    std::cout<<"hahowa fost channel "<<Clients[index].nickNameGetter()<<std::endl;
+    }
 }

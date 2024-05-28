@@ -470,6 +470,49 @@ void Server::receiveData(int index)
                     std::cout<<"bool invite "<<Channels[channelName].invite<<" keypass "<<Channels[channelName].password<<" limits "<<Channels[channelName].limits<<std::endl;
                 }
             }
+            else if (str == "KICK")
+            {
+                ss>>str;
+                if(str[0] == '#')
+                {
+                    if(Channels.find(str) != Channels.end())
+                    {
+                        int flag = 0;
+                        std::string str2;
+                        ss >> str2;
+                        std::map<int, Client>::iterator itClient;
+                        for(itClient = Channels[str].Clients.begin(); itClient != Channels[str].Clients.end(); itClient++)
+                        {
+                            if(itClient->second.nickNameGetter() == str2)
+                            {
+                                flag = 1;
+                                Channels[str].Clients.erase(itClient);
+                                return;
+                            }
+                        }
+                        if (!flag)
+                        {
+                            send(fds[index].fd,"This user is already not in the channel\r\n",42,0);
+                            return;
+                        }
+                        else
+                        {
+                            send(fds[index].fd,"User kicked\r\n",14,0);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        send(fds[index].fd,"Channel not found \r\n",21,0);
+                        return;
+                    }
+                }
+                else
+                {
+                    send(fds[index].fd,"Not the right syntax of the command : KICK <#channel> <user> \r\n",64,0);
+                    return;
+                }
+            }
             else if(str == "PRIVMSG")
             {
                 ss>>str;

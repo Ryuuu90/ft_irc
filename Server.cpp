@@ -473,7 +473,6 @@ void Server::receiveData(int index)
             else if(str == "PRIVMSG")
             {
                 ss>>str;
-                std::cout<<"--->"<<str<<std::endl;
                 if(str[0] == '#')
                 {
                     if(Channels.find(str) != Channels.end())
@@ -483,16 +482,12 @@ void Server::receiveData(int index)
                             send(fds[index].fd,"You're not part of this channel\r\n",34,0);
                             return;
                         }
-                        std::cout<<"--->"<<"lqaha"<<std::endl;
                         std::string line;
                         std::getline(ss,line);
-                        std::cout<<"--->"<<str<<std::endl;
                         std::string msg = line + "\r\n";
                         std::map<int, Client>::iterator IT1;
-                        std::cout<<"--->"<<Channels[str].Clients.begin()->second.nickNameGetter()<<std::endl;
                         for(IT1 = Channels[str].Clients.begin(); IT1 != Channels[str].Clients.end(); IT1++)
                         {
-                            std::cout<<"--->"<<IT1->first<<std::endl;
                             if(IT1->first != fds[index].fd)
                                 send(IT1->first,msg.c_str(),msg.size(),0);
                         }

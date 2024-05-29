@@ -470,9 +470,62 @@ void Server::receiveData(int index)
                     std::cout<<"bool invite "<<Channels[channelName].invite<<" keypass "<<Channels[channelName].password<<" limits "<<Channels[channelName].limits<<std::endl;
                 }
             }
+            else if (str == "KICK")
+            {
+                ss>>str;
+                if(str[0] == '#')
+                {
+                    if(Channels.find(str) != Channels.end())
+                    {
+
+                        if(Channels[str].operators.find(fds[index].fd) == Channels[str].operators.end())
+                        {
+                            send(fds[index].fd,"You are not an operator of this channel\r\n",42,0);
+                            return;
+                        }
+
+                        int flag = 0;
+                        std::string str2;
+                        ss >> str2;
+
+                        std::map<int, Client>::iterator itClient;
+                        for(itClient = Channels[str].Clients.begin(); itClient != Channels[str].Clients.end(); itClient++)
+                        {
+                            if(itClient->second.nickNameGetter() == str2)
+                            {
+                                flag = 1;
+                                Channels[str].Clients.erase(itClient);
+                                return;
+                            }
+                        }
+                        if (!flag)
+                        {
+                            send(fds[index].fd,"This user is already not in the channel\r\n",42,0);
+                            return;
+                        }
+                        else
+                        {
+                            send(fds[index].fd,"User kicked\r\n",14,0);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        send(fds[index].fd,"Channel not found \r\n",21,0);
+                        return;
+                    }
+                }
+                else
+                {
+                    send(fds[index].fd,"Not the right syntax of the command : KICK <#channel> <user> \r\n",64,0);
+                    return;
+                }
+            }
+            
             else if(str == "PRIVMSG")
             {
                 ss>>str;
+                std::cout<<"--->"<<str<<std::endl;
                 if(str[0] == '#')
                 {
                     if(Channels.find(str) != Channels.end())
@@ -482,12 +535,16 @@ void Server::receiveData(int index)
                             send(fds[index].fd,"You're not part of this channel\r\n",34,0);
                             return;
                         }
+                        std::cout<<"--->"<<"lqaha"<<std::endl;
                         std::string line;
                         std::getline(ss,line);
+                        std::cout<<"--->"<<str<<std::endl;
                         std::string msg = line + "\r\n";
                         std::map<int, Client>::iterator IT1;
+                        std::cout<<"--->"<<Channels[str].Clients.begin()->second.nickNameGetter()<<std::endl;
                         for(IT1 = Channels[str].Clients.begin(); IT1 != Channels[str].Clients.end(); IT1++)
                         {
+                            std::cout<<"--->"<<IT1->first<<std::endl;
                             if(IT1->first != fds[index].fd)
                                 send(IT1->first,msg.c_str(),msg.size(),0);
                         }

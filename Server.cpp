@@ -11,7 +11,7 @@ Server::Server(int port, std::string password)
     serverSocket();
     std::cout << GREEN << "Server (" << this->sockserv << ") is connected." << RESET << std::endl;
     std::cout << YELLOW << "The server is waiting for new connections..." << RESET << std::endl;
-    while(!signal)
+    while(true)
     {
         if(poll(&fds[0], fds.size(), -1) == -1)
             throw(std::runtime_error("Error: Faild to poll."));
@@ -375,15 +375,18 @@ void Server::receiveData(int index)
         if(this->authenFlag[fds[index].fd] == 4)
         {
             std::vector<std::string> vec;
+            std::stringstream ss2(buff);
             std::stringstream ss(buff);
-            std::string str;
-            ss >> str;
-            if (str == "PING")
+            std::string str; 
+            getline(ss2, str);
+            if (str.find("PING") != std::string::npos)
             {
+                std::cout << YELLOW << "here" << RESET << std::endl; 
                 msg = "PONG\r\n";
                 send(fds[index].fd, msg.c_str(), msg.size(), 0);
             }
-            else if(str == "JOIN")
+            ss >> str;
+            if(str == "JOIN")
             {
                 {
                     std::vector<std::vector<std::string> > params;
@@ -557,8 +560,12 @@ void Server::receiveData(int index)
                         for(IT1 = Channels[str].Clients.begin(); IT1 != Channels[str].Clients.end(); IT1++)
                         {
                             std::cout<<"--->"<<IT1->first<<std::endl;
-                            if(IT1->first != fds[index].fd)
-                                send(IT1->first,msg.c_str(),msg.size(),0);
+                            std::ostringstream response;
+                            // if(IT1->first != fds[index].fd)
+                            {
+                                response << ":" <<Clients[fds[index].fd].nickNameGetter() << " PRIVMSG " << str << " :" << msg << "\r\n";
+                                send(IT1->first, response.str().c_str(), response.str().size(), 0);
+                            }
                         }
                     }
                 }
@@ -570,9 +577,12 @@ void Server::receiveData(int index)
                         std::cout<<it8->second.nickNameGetter()<<" ";
                         if (!it8->second.nickNameGetter().compare(str))
                         {
-                            ss >> str;
-                            std::cout<<str<<" haaaa "<<it8->first<<std::endl;
-                            std::string mm = str + "\r\n";
+                            std::string input;
+							std::getline(ss, str);
+                            // ss >> str;
+                            // std::cout<<str<<" haaaa "<<it8->first<<std::endl;
+                            input = str.substr(1,str.size() - 1);
+                            std::string mm = input + "\r\n";
                             send(it8->first, mm.c_str(), mm.size(), 0);
                             break;
                         }
@@ -588,6 +598,7 @@ void Server::receiveData(int index)
                 msg = "\033[0;35mJDMbot:\033[0;36m " + bot.getRandomFact() + "\033[0m\r\n";
                 send(fds[index].fd, msg.c_str(), msg.size(), 0);
             }
+            
 
         }
         

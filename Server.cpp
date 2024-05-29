@@ -470,7 +470,8 @@ void Server::receiveData(int index)
                     std::cout<<"bool invite "<<Channels[channelName].invite<<" keypass "<<Channels[channelName].password<<" limits "<<Channels[channelName].limits<<std::endl;
                 }
             }
-            else if (str == "KICK")
+            
+            else if(str == "PRIVMSG")
             {
                 ss>>str;
                 if(str[0] == '#')

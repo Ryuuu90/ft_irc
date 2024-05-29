@@ -66,7 +66,7 @@ class Server
         char buff[BUFFER_SIZE];
         std::map<int, Client> Clients;
         std::map<std::string, Channel> Channels;
-        int authenFlag;
+        std::map<int, int> authenFlag;
         std::string timeStr;
         Server();
     public:

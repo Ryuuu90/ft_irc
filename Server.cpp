@@ -11,7 +11,7 @@ Server::Server(int port, std::string password)
     serverSocket();
     std::cout << GREEN << "Server (" << this->sockserv << ") is connected." << RESET << std::endl;
     std::cout << YELLOW << "The server is waiting for new connections..." << RESET << std::endl;
-    while(true)
+    while(!signal)
     {
         if(poll(&fds[0], fds.size(), -1) == -1)
             throw(std::runtime_error("Error: Faild to poll."));
@@ -126,7 +126,7 @@ void Server::UserCommand(int fd, std::vector<std::string> &vec)
                 Clients[fd].realNameSetter(vec[4]);
             else
                 Clients[fd].realNameSetter(vec[4] + " " + vec[5]);
-            this->authenFlag++;
+            this->authenFlag[fd]++;
             std::cout << GREEN << "User gets registered successfully." << RESET << std::endl;
             msg = "\033[1;32mUser gets registered with username '" + Clients[fd].userNameGetter() + "' and realname '" + Clients[fd].realNameGetter() + "'\033[0m\r\n";
             send(fd, msg.c_str(), msg.size(), 0);
@@ -159,7 +159,7 @@ void Server::NickCommand(int fd, std::vector<std::string> &vec)
                 ParamMsgClient(fd, vec[1], " 432 :Erroneus nickname.\r\n");
             else
             {
-                this->authenFlag++;
+                this->authenFlag[fd]++;
                 cli.nickNameSetter(vec[1]);
                 std::cout<<"--> NICK "<<vec[1]<<std::endl;
                 std::cout<<"--> NICK "<<cli.nickNameGetter()<<std::endl;
@@ -170,7 +170,7 @@ void Server::NickCommand(int fd, std::vector<std::string> &vec)
             }
         }
     }
-    if(this->authenFlag == 2)
+    if(this->authenFlag[fd] == 2)
     {
         msg = "\033[1;35mPlease enter your username and your realname:\033[0m\r\n";
         send(fd, msg.c_str(), msg.size(), 0);
@@ -197,13 +197,13 @@ void Server::PassCommand(int fd, std::vector<std::string> &vec)
         std::cout << YELLOW << "'" << fd << "'" << RESET << std::endl;
         if(vec[1] == this->password)
         {
-            this->authenFlag++;
+            this->authenFlag[fd]++;
             std::cout << GREEN2 << "Client (" << fd << ") Connected." << RESET << std::endl;
         }
         else
             msgToClient(fd, " 464 :Password incorrect\r\n");
     }
-    if(this->authenFlag == 1)
+    if(this->authenFlag[fd] == 1)
     {
         msg = "\033[1;35mPlease enter your nickname:\033[0m\r\n";
         send(fd, msg.c_str(), msg.size(), 0);
@@ -221,11 +221,11 @@ void Server::authentication(std::string buff, int index)
         vec.push_back(str);
     if(vec.empty())
         return;
-    if(this->authenFlag == 0)
+    if(this->authenFlag[fds[index].fd] == 0)
         PassCommand(fds[index].fd, vec);
-    else if(this->authenFlag == 1)
+    else if(this->authenFlag[fds[index].fd] == 1)
         NickCommand(fds[index].fd, vec);
-    else if(this->authenFlag == 2)
+    else if(this->authenFlag[fds[index].fd] == 2)
         UserCommand(fds[index].fd, vec);
 }
 void Server::acceptClients()
@@ -244,7 +244,7 @@ void Server::acceptClients()
     this->npollfd.fd = this->sockcli;
     this->npollfd.events = POLLIN;
     this->npollfd.revents = 0;
-    this->authenFlag = 0;
+    this->authenFlag[npollfd.fd] = 0;
     fds.push_back(this->npollfd);
     // Clients[npollfd.fd].IpAddressSetter(inet_ntoa(cliaddress.sin_addr));
     std::string msg = SERVER_NAME;
@@ -320,6 +320,7 @@ std::vector<std::vector<std::string> > &split_Channels(std::string input, std::v
 
 bool Server::checkControlD(int rec)
 {
+    std::cout << RED << buff << RESET << std::endl;
     if(this->buff[rec - 1] != '\n')
     {
         this->joinFlag = 1;
@@ -352,9 +353,9 @@ void Server::receiveData(int index)
         if(checkControlD(rec))
             return;
         std::cout << this->join << std::endl;
-        if(this->authenFlag < 3)
+        if(this->authenFlag[fds[index].fd] < 3)
             authentication(this->join, index);
-        if(this->authenFlag == 3)
+        if(this->authenFlag[fds[index].fd] == 3)
         {
 
             char hostname[256];
@@ -369,15 +370,20 @@ void Server::receiveData(int index)
             send(fds[index].fd, msg.c_str(), msg.size(), 0);
             msg = ":WEBSERV 004 " + Clients[fds[index].fd].nickNameGetter() + " :\033[0;33mWEBSERV 1.0\033[0m\r\n";
             send(fds[index].fd, msg.c_str(), msg.size(), 0);
-            this->authenFlag++;
+            this->authenFlag[fds[index].fd]++;
         }
-        if(this->authenFlag == 4)
+        if(this->authenFlag[fds[index].fd] == 4)
         {
             std::vector<std::string> vec;
             std::stringstream ss(buff);
             std::string str;
             ss >> str;
-            if(str == "JOIN")
+            if (str == "PING")
+            {
+                msg = "PONG\r\n";
+                send(fds[index].fd, msg.c_str(), msg.size(), 0);
+            }
+            else if(str == "JOIN")
             {
                 {
                     std::vector<std::vector<std::string> > params;
@@ -582,15 +588,7 @@ void Server::receiveData(int index)
                 msg = "\033[0;35mJDMbot:\033[0;36m " + bot.getRandomFact() + "\033[0m\r\n";
                 send(fds[index].fd, msg.c_str(), msg.size(), 0);
             }
-            vec.push_back(str);
-            if(vec.empty())
-                return;
-            std::cout << RED << vec[0] << RESET << std::endl;
-            if(vec[0] == "PING")
-            {
-                msg = "PONG\r\n";
-                send(fds[index].fd, msg.c_str(), msg.size(), 0);
-            }
+
         }
         
     }

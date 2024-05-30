@@ -561,7 +561,7 @@ void Server::receiveData(int index)
                         {
                             std::cout<<"--->"<<IT1->first<<std::endl;
                             std::ostringstream response;
-                            // if(IT1->first != fds[index].fd)
+                            if(IT1->first != fds[index].fd)
                             {
                                 response << ":" <<Clients[fds[index].fd].nickNameGetter() << " PRIVMSG " << str << " :" << msg << "\r\n";
                                 send(IT1->first, response.str().c_str(), response.str().size(), 0);

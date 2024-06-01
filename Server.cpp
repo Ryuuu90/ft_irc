@@ -492,7 +492,6 @@ void Server::receiveData(int index)
                 {
                     if(Channels.find(str) != Channels.end())
                     {
-
                         if(Channels[str].operators.find(fds[index].fd) == Channels[str].operators.end())
                         {
                             send(fds[index].fd,"You are not an operator of this channel\r\n",42,0);
@@ -501,8 +500,12 @@ void Server::receiveData(int index)
 
                         int flag = 0;
                         std::string str2;
-                        ss >> str2;
-
+                        if (!(ss >> str2))
+                        {
+                            std::string errMsg = ":irc 461 " + Clients[fds[index].fd].nickNameGetter() + " KICK :Not enough parameters\r\n";
+                            send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
+                            return;
+                        }
                         std::map<int, Client>::iterator itClient;
                         for(itClient = Channels[str].Clients.begin(); itClient != Channels[str].Clients.end(); itClient++)
                         {
@@ -515,7 +518,8 @@ void Server::receiveData(int index)
                         }
                         if (!flag)
                         {
-                            send(fds[index].fd,"This user is already not in the channel\r\n",42,0);
+                            std::string errMsg = ":irc 401 " + Clients[fds[index].fd].nickNameGetter() + " " + str2 + " :No such nick/channel\r\n";
+                            send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
                             return;
                         }
                         else
@@ -526,7 +530,8 @@ void Server::receiveData(int index)
                     }
                     else
                     {
-                        send(fds[index].fd,"Channel not found \r\n",21,0);
+                        std::string errMsg = ":irc 403 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :No such channel\r\n";
+                        send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
                         return;
                     }
                 }
@@ -536,6 +541,55 @@ void Server::receiveData(int index)
                     return;
                 }
             }
+            else if (str == "TOPIC")
+            {
+                ss >> str;
+                if(str[0] == '#')
+                {
+                    if(Channels.find(str) != Channels.end())
+                    {
+                        if(Channels[str].Clients.find(fds[index].fd) == Channels[str].Clients.end())
+                        {
+                            send(fds[index].fd,"You're not part of this channel\r\n",34,0);
+                            return;
+                        }
+                        if (Channels[str].operators.find(fds[index].fd) == Channels[str].operators.end() && Channels[str].restrictionsTOPIC)
+                        {
+                            send(fds[index].fd,"You are not an operator of this channel\r\n",42,0);
+                            return;
+                        }
+                        std::string topic;
+                        std::getline(ss, topic);
+                        if (topic.empty() && Channels[str].topic.empty())
+                        {
+                            std::string errMsg = ":irc 331 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :No topic is set\r\n";
+                            send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
+                            return;
+                        }
+                        else if (topic.empty())
+                        {
+                            std::string msg = ":irc 332 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :" + Channels[str].topic + "\r\n";
+                            send(fds[index].fd, msg.c_str(), msg.size(), 0);
+                            return;
+                        }
+                        else
+                            Channels[str].topic = topic;
+                    }
+                    else
+                    {
+                        std::string errMsg = ":irc 403 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :No such channel\r\n";
+                        send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
+                        return;
+                    }
+                }
+                else
+                {
+                    send(fds[index].fd,"Not the right syntax of the command : TOPIC <#channel> <topic> \r\n",65,0);
+                    return;
+                }
+
+            }
+
             
             else if(str == "PRIVMSG")
             {

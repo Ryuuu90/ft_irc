@@ -485,27 +485,24 @@ void Server::receiveData(int index)
                     std::cout<<"bool invite "<<Channels[channelName].invite<<" keypass "<<Channels[channelName].password<<" limits "<<Channels[channelName].limits<<std::endl;
                 }
             }
-            else if (str == "KICK")
+             else if (str == "KICK")
             {
                 ss>>str;
                 if(str[0] == '#')
                 {
                     if(Channels.find(str) != Channels.end())
                     {
+
                         if(Channels[str].operators.find(fds[index].fd) == Channels[str].operators.end())
                         {
-                            send(fds[index].fd,"You are not an operator of this channel\r\n",42,0);
+                            send(fds[index].fd, ":irc 482 userNick #channelName :You're not channel operator\r\n", 55, 0);
                             return;
                         }
 
                         int flag = 0;
                         std::string str2;
-                        if (!(ss >> str2))
-                        {
-                            std::string errMsg = ":irc 461 " + Clients[fds[index].fd].nickNameGetter() + " KICK :Not enough parameters\r\n";
-                            send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
-                            return;
-                        }
+                        ss >> str2;
+
                         std::map<int, Client>::iterator itClient;
                         for(itClient = Channels[str].Clients.begin(); itClient != Channels[str].Clients.end(); itClient++)
                         {
@@ -518,13 +515,15 @@ void Server::receiveData(int index)
                         }
                         if (!flag)
                         {
-                            std::string errMsg = ":irc 401 " + Clients[fds[index].fd].nickNameGetter() + " " + str2 + " :No such nick/channel\r\n";
+                            std::string errMsg = ":irc 441 " + Clients[fds[index].fd].nickNameGetter() + " " + str2 + " " + str + " :They aren't on that channel\r\n";
                             send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
+
                             return;
                         }
                         else
                         {
-                            send(fds[index].fd,"User kicked\r\n",14,0);
+                            std::string confirmMsg = ":" + Clients[fds[index].fd].nickNameGetter() + " KICK " + str + " " + str2 + " :User kicked\r\n";
+                            send(fds[index].fd, confirmMsg.c_str(), confirmMsg.length(), 0);
                             return;
                         }
                     }
@@ -589,7 +588,71 @@ void Server::receiveData(int index)
                 }
 
             }
+            else if (str == "INVITE")
+            {
+                ss >> str;
+                std::string str2;
+                if (!(ss >> str2))
+                {
+                std::cout << "--------INVITE bool : " <<  Channels[str2].invite << std::endl;
+                    std::string errMsg = ":irc 461 " + Clients[fds[index].fd].nickNameGetter() + " INVITE :Not enough parameters\r\n";
+                    send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
+                    return;
+                }
+                if(str2[0] == '#')
+                {
+                    if(Channels.find(str2) != Channels.end())
+                    {
+                        if (Channels[str2].operators.find(fds[index].fd) == Channels[str2].operators.end())
+                        {
+                            send(fds[index].fd,"You are not an operator of this channel\r\n",42,0);
+                            return;
+                        }
+                        // if (Channels[str2].invite)
+                        // {
+                        //     send(fds[index].fd,"You can't invite in this channel\r\n",34,0);
+                        //     return;
+                        // }
+                        
+                        if(Channels[str2].Clients.find(fds[index].fd) == Channels[str2].Clients.end())
+                        {
+                            send(fds[index].fd,"You're not part of this channel\r\n",34,0);
+                            return;
+                        }
 
+                        std::map<int, Client>::iterator itClient;
+                        for(itClient = Clients.begin(); itClient != Clients.end(); itClient++)
+                        {
+                            if(itClient->second.nickNameGetter() == str)
+                            {
+                                Channels[str2].inviteClients[itClient->first] = itClient->second;      
+
+                                std::map<int, Client>::iterator it;
+                                for(it = Channels[str2].inviteClients.begin(); it != Channels[str2].inviteClients.end(); it++)
+                                {
+                                    std::cout << it->first << " " << it->second.nickNameGetter() << std::endl;
+                                }       
+                                return;
+                            }
+                        }
+                        std::string errMsg = ":irc 401 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :No such nick/channel\r\n";
+                        send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
+                        return;
+                    }
+                    else
+                    {
+                        std::string errMsg = ":irc 403 " + Clients[fds[index].fd].nickNameGetter() + " " + str2 + " :No such channel\r\n";
+                        send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
+                        return;
+                    }
+                }
+                else
+                {
+                    send(fds[index].fd,"Not the right syntax of the command : INVITE <user> <#channel>  \r\n",67,0);
+                    return;
+                }
+
+            }
             
             else if(str == "PRIVMSG")
             {

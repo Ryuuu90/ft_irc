@@ -17,6 +17,7 @@ class Channel
         bool keyPass;
 		bool limit;
         bool invite;
+		std::map<int , Client> inviteClients;
         std::map<int , Client> operators;
         std::map<int , Client> Clients;
         std::string name;

@@ -432,12 +432,12 @@ void Server::receiveData(int index)
 									return;
 								}
 							}
-							std::map<int, Client>::iterator it2 = Clients.find(fds[index].fd);
+							// std::map<int, Client>::iterator it2 = Clients.find(fds[index].fd);
 							std::string input;
 							std::getline(ss, input);
 							try
 							{
-								Channels[params[0][i]].join(it2->second, fds[index].fd, params[1], k);
+								Channels[params[0][i]].join(Clients[fds[index].fd], fds[index].fd, params[1], k);
 								if(Channels[params[0][i]].keyPass)
 									k++;
 							}
@@ -547,27 +547,27 @@ void Server::receiveData(int index)
                 {
                     if(Channels.find(str) != Channels.end())
                     {
-                        if(Channels[str].Clients.find(fds[index].fd) == Channels[str].Clients.end())
-                        {
-                            send(fds[index].fd,"You're not part of this channel\r\n",34,0);
-                            return;
-                        }
                         if (Channels[str].operators.find(fds[index].fd) == Channels[str].operators.end() && Channels[str].restrictionsTOPIC)
                         {
                             send(fds[index].fd,"You are not an operator of this channel\r\n",42,0);
+                            return;
+                        }
+                        if(Channels[str].Clients.find(fds[index].fd) == Channels[str].Clients.end())
+                        {
+                            send(fds[index].fd,"You're not part of this channel\r\n",34,0);
                             return;
                         }
                         std::string topic;
                         std::getline(ss, topic);
                         if (topic.empty() && Channels[str].topic.empty())
                         {
-                            std::string errMsg = ":irc 331 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :No topic is set\r\n";
+                            std::string errMsg = ":WEBSERV 331 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :No topic is set\r\n";
                             send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
                             return;
                         }
                         else if (topic.empty())
                         {
-                            std::string msg = ":irc 332 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :" + Channels[str].topic + "\r\n";
+                            std::string msg = ":WEBSERV 332 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :" + Channels[str].topic + "\r\n";
                             send(fds[index].fd, msg.c_str(), msg.size(), 0);
                             return;
                         }
@@ -576,7 +576,7 @@ void Server::receiveData(int index)
                     }
                     else
                     {
-                        std::string errMsg = ":irc 403 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :No such channel\r\n";
+                        std::string errMsg = ":WEBSERV 403 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :No such channel\r\n";
                         send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
                         return;
                     }
@@ -625,12 +625,12 @@ void Server::receiveData(int index)
                         {
                             if(itClient->second.nickNameGetter() == str)
                             {
-                                Channels[str2].inviteClients[itClient->first] = itClient->second;      
+                                Channels[str2].inviteClients[itClient->first] = itClient->second;
 
                                 std::map<int, Client>::iterator it;
                                 for(it = Channels[str2].inviteClients.begin(); it != Channels[str2].inviteClients.end(); it++)
                                 {
-                                    std::cout << it->first << " " << it->second.nickNameGetter() << std::endl;
+                                    std::cout << it->first << "*-*-* " << it->second.nickNameGetter() << std::endl;
                                 }       
                                 return;
                             }

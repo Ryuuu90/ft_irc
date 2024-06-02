@@ -222,8 +222,9 @@ void Channel::join(Client &client, int index, std::vector<std::string> params, s
 {
     if(invite == true)
     {
-		std::cout<<"**"<<inviteCLients.find(index)->first<<std::endl;
-		if(inviteCLients.find(index) == inviteCLients.end())
+        std::cout<<"index "<<index<<std::endl;
+		// std::cout<<"**"<<inviteClients.find(index)->second.nickNameGetter()<<std::endl;
+		if(inviteClients.find(index) == inviteClients.end())
 		{
 			throw(std::invalid_argument("not invited\r\n"));
 		}
@@ -254,5 +255,17 @@ void Channel::join(Client &client, int index, std::vector<std::string> params, s
     {
         Clients[index] = client;
 	    std::cout<<"hahowa fost channel "<<Clients[index].nickNameGetter()<<std::endl;
+        std::ostringstream response;
+        response << ":" << Clients[index].nickNameGetter() << " JOIN " << name<<"\r\n";
+        send(index, response.str().c_str(), response.str().size(), 0);
+        if(!topic.empty())
+        {
+            std::cout<<"salam"<<std::endl; 
+
+            std::ostringstream s;
+            s<<":WEBSERVE 332 "<<Clients[index].nickNameGetter()<< " "<<name<<" :"<<topic<<"\r\n";
+            send(index, s.str().c_str(), s.str().size(), 0);
+        }
+
     }
 }

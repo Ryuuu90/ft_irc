@@ -495,7 +495,7 @@ void Server::receiveData(int index)
 
                         if(Channels[str].operators.find(fds[index].fd) == Channels[str].operators.end())
                         {
-                            send(fds[index].fd, ":irc 482 userNick #channelName :You're not channel operator\r\n", 55, 0);
+                            send(fds[index].fd, ":WEBSERV 482 userNick #channelName :You're not channel operator\r\n", 55, 0);
                             return;
                         }
 
@@ -515,7 +515,7 @@ void Server::receiveData(int index)
                         }
                         if (!flag)
                         {
-                            std::string errMsg = ":irc 441 " + Clients[fds[index].fd].nickNameGetter() + " " + str2 + " " + str + " :They aren't on that channel\r\n";
+                            std::string errMsg = ":WEBSERV 441 " + Clients[fds[index].fd].nickNameGetter() + " " + str2 + " " + str + " :They aren't on that channel\r\n";
                             send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
 
                             return;
@@ -529,7 +529,7 @@ void Server::receiveData(int index)
                     }
                     else
                     {
-                        std::string errMsg = ":irc 403 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :No such channel\r\n";
+                        std::string errMsg = ":WEBSERV 403 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :No such channel\r\n";
                         send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
                         return;
                     }
@@ -549,12 +549,20 @@ void Server::receiveData(int index)
                     {
                         if (Channels[str].operators.find(fds[index].fd) == Channels[str].operators.end() && Channels[str].restrictionsTOPIC)
                         {
-                            send(fds[index].fd,"You are not an operator of this channel\r\n",42,0);
+                            std::ostringstream errorResponse;
+
+                            errorResponse << ":WEBSERV 482 " << Clients[index].nickNameGetter() << " " << Channels[str].name << " :You're not channel operator";
+                            send(fds[index].fd, errorResponse.str().c_str(), errorResponse.str().size(), 0);
+
                             return;
                         }
                         if(Channels[str].Clients.find(fds[index].fd) == Channels[str].Clients.end())
                         {
-                            send(fds[index].fd,"You're not part of this channel\r\n",34,0);
+                            std::ostringstream errorResponse;
+ 
+                            errorResponse << ":WEBSERV 442 " << Clients[index].nickNameGetter() << " " << Channels[str].name  << " :You're not on that channel";
+                            send(fds[index].fd, errorResponse.str().c_str(), errorResponse.str().size(), 0);
+
                             return;
                         }
                         std::string topic;
@@ -583,7 +591,8 @@ void Server::receiveData(int index)
                 }
                 else
                 {
-                    send(fds[index].fd,"Not the right syntax of the command : TOPIC <#channel> <topic> \r\n",65,0);
+                    std::string errMsg = ":WEBSERV 461 " + Clients[fds[index].fd].nickNameGetter() + " TOPIC :Not the right syntax of the command : TOPIC <#channel> <topic> \r\n";
+                    send(fds[index].fd, errMsg.c_str(), errMsg.size(), 0);
                     return;
                 }
 
@@ -594,8 +603,8 @@ void Server::receiveData(int index)
                 std::string str2;
                 if (!(ss >> str2))
                 {
-                std::cout << "--------INVITE bool : " <<  Channels[str2].invite << std::endl;
-                    std::string errMsg = ":irc 461 " + Clients[fds[index].fd].nickNameGetter() + " INVITE :Not enough parameters\r\n";
+                    std::cout << "--------INVITE bool : " <<  Channels[str2].invite << std::endl;
+                    std::string errMsg = ":WEBSERV 461 " + Clients[fds[index].fd].nickNameGetter() + " INVITE :Not enough parameters\r\n";
                     send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
                     return;
                 }
@@ -605,7 +614,8 @@ void Server::receiveData(int index)
                     {
                         if (Channels[str2].operators.find(fds[index].fd) == Channels[str2].operators.end())
                         {
-                            send(fds[index].fd,"You are not an operator of this channel\r\n",42,0);
+                            std::string errMsg = ":WEBSERV 482 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :You're not channel operator\r\n";
+                            send(fds[index].fd, errMsg.c_str(), errMsg.size(), 0);
                             return;
                         }
                         // if (Channels[str2].invite)
@@ -616,7 +626,8 @@ void Server::receiveData(int index)
                         
                         if(Channels[str2].Clients.find(fds[index].fd) == Channels[str2].Clients.end())
                         {
-                            send(fds[index].fd,"You're not part of this channel\r\n",34,0);
+                            std::string errMsg = ":WEBSERV 442 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :You're not on that channel\r\n";
+                            send(fds[index].fd, errMsg.c_str(), errMsg.size(), 0);
                             return;
                         }
 
@@ -635,20 +646,21 @@ void Server::receiveData(int index)
                                 return;
                             }
                         }
-                        std::string errMsg = ":irc 401 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :No such nick/channel\r\n";
+                        std::string errMsg = ":WEBSERV 401 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :No such nick/channel\r\n";
                         send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
                         return;
                     }
                     else
                     {
-                        std::string errMsg = ":irc 403 " + Clients[fds[index].fd].nickNameGetter() + " " + str2 + " :No such channel\r\n";
+                        std::string errMsg = ":WEBSERV 403 " + Clients[fds[index].fd].nickNameGetter() + " " + str2 + " :No such channel\r\n";
                         send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
                         return;
                     }
                 }
                 else
                 {
-                    send(fds[index].fd,"Not the right syntax of the command : INVITE <user> <#channel>  \r\n",67,0);
+                    std::string errMsg = ":WEBSERV 461 " + Clients[fds[index].fd].nickNameGetter() + " INVITE :Not the right syntax of the command : INVITE <user> <#channel> \r\n";
+                    send(fds[index].fd, errMsg.c_str(), errMsg.size(), 0);
                     return;
                 }
 

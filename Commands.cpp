@@ -114,58 +114,82 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
             std::cout<<"bool invite "<<Channels[channelName].invite<<" keypass "<<Channels[channelName].password<<" limits "<<Channels[channelName].limits<<std::endl;
         }
     }
-        else if (str == "KICK")
+    else if (str == "KICK")
     {
-        ss>>str;
-        if(str[0] == '#')
+        ss >> str;
+        if (str[0] == '#')
         {
-            if(Channels.find(str) != Channels.end())
+            if (Channels.find(str) != Channels.end())
             {
-
-                if(Channels[str].operators.find(fds[index].fd) == Channels[str].operators.end())
+                if (Channels[str].operators.find(fds[index].fd) == Channels[str].operators.end())
                 {
-                    send(fds[index].fd, ":WEBSERV 482 userNick #channelName :You're not channel operator\r\n", 55, 0);
+                    std::ostringstream errorResponse;
+                    errorResponse << ":WEBSERV 482 " << Clients[fds[index].fd].nickNameGetter() << " " << str << " :You're not channel operator\r\n";
+                    send(fds[index].fd, errorResponse.str().c_str(), errorResponse.str().size(), 0);
                     return;
                 }
 
-                int flag = 0;
-                std::string str2;
-                ss >> str2;
+                std::string targetUser;
+                ss >> targetUser;
 
+                bool userFound = false;
                 std::map<int, Client>::iterator itClient;
-                for(itClient = Channels[str].Clients.begin(); itClient != Channels[str].Clients.end(); itClient++)
+                for (itClient = Channels[str].Clients.begin(); itClient != Channels[str].Clients.end(); itClient++)
                 {
-                    if(itClient->second.nickNameGetter() == str2)
+                    if (itClient->second.nickNameGetter() == targetUser)
                     {
-                        flag = 1;
+                        userFound = true;
+
+                        // Get the comment if any
+                        std::string comment;
+                        std::string commentSub;
+                        std::getline(ss, comment);
+                        commentSub = comment.substr(0, comment.size() - 1);
+                        std::cout << "Comment: [" << comment << "]" << std::endl;
+                        if (commentSub.empty())
+                            comment = "No reason specified";
+                        else if (commentSub[0] == ' ')
+                                comment = commentSub.substr(1, comment.size() - 1);
+
+                        // Notify the kicked user
+                        std::ostringstream kickNotice;
+                        kickNotice << ":" << Clients[fds[index].fd].nickNameGetter() << " KICK " << str << " " << targetUser << " :" << comment << "\r\n";
+                        send(itClient->first, kickNotice.str().c_str(), kickNotice.str().size(), 0);
+
+                        // Notify the channel about the kicked user
+                        std::ostringstream channelNotice;
+                        channelNotice << ":" << Clients[fds[index].fd].nickNameGetter() << " KICK " << str << " " << targetUser << " :" << comment << "\r\n";
+                        std::map<int, Client>::iterator itNotify;
+                        for (itNotify = Channels[str].Clients.begin(); itNotify != Channels[str].Clients.end(); itNotify++)
+                        {
+                            send(itNotify->first, channelNotice.str().c_str(), channelNotice.str().size(), 0);
+                        }
+
                         Channels[str].Clients.erase(itClient);
-                        return;
+                        break;
                     }
                 }
-                if (!flag)
+                if (!userFound)
                 {
-                    std::string errMsg = ":WEBSERV 441 " + Clients[fds[index].fd].nickNameGetter() + " " + str2 + " " + str + " :They aren't on that channel\r\n";
-                    send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
-
-                    return;
-                }
-                else
-                {
-                    std::string confirmMsg = ":" + Clients[fds[index].fd].nickNameGetter() + " KICK " + str + " " + str2 + " :User kicked\r\n";
-                    send(fds[index].fd, confirmMsg.c_str(), confirmMsg.length(), 0);
+                    std::ostringstream errMsg;
+                    errMsg << ":WEBSERV 441 " << Clients[fds[index].fd].nickNameGetter() << " " << targetUser << " " << str << " :They aren't on that channel\r\n";
+                    send(fds[index].fd, errMsg.str().c_str(), errMsg.str().size(), 0);
                     return;
                 }
             }
             else
             {
-                std::string errMsg = ":WEBSERV 403 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :No such channel\r\n";
-                send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
+                std::ostringstream errMsg;
+                errMsg << ":WEBSERV 403 " << Clients[fds[index].fd].nickNameGetter() << " " << str << " :No such channel\r\n";
+                send(fds[index].fd, errMsg.str().c_str(), errMsg.str().size(), 0);
                 return;
             }
         }
         else
         {
-            send(fds[index].fd,"Not the right syntax of the command : KICK <#channel> <user> \r\n",64,0);
+            std::ostringstream errMsg;
+            errMsg << ":WEBSERV 461 " << Clients[fds[index].fd].nickNameGetter() << " KICK :Not the right syntax of the command : KICK <#channel> <user> [:comment]\r\n";
+            send(fds[index].fd, errMsg.str().c_str(), errMsg.str().size(), 0);
             return;
         }
     }

@@ -31,4 +31,5 @@ class Channel
         void	set_topic(std::string Topic);
 		void addOperand(Client &client, int index);
 };
+std::vector<std::vector<std::string> > &split_Channels(std::string input, std::vector<std::vector<std::string> > &vect);
 #endif

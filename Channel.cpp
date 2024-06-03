@@ -216,56 +216,91 @@ void Channel::mode(std::string input, int index)
  std::cout<<"bool invite "<<invite<<" keypass "<<password<<" bool key "<<keyPass<<" limits "<<limits<<std::endl;
 }
 
+#include <netdb.h>
+#include <arpa/inet.h>
 
-    
-void Channel::join(Client &client, int index, std::vector<std::string> params, size_t &paramsIndex)
-{
-    if(invite == true)
-    {
-        std::cout<<"index "<<index<<std::endl;
-		// std::cout<<"**"<<inviteClients.find(index)->second.nickNameGetter()<<std::endl;
-		if(inviteClients.find(index) == inviteClients.end())
-		{
-			throw(std::invalid_argument("not invited\r\n"));
-		}
-	}
-	if(limit == true)
-	{	if(limits == Clients.size())
-			throw(std::invalid_argument("limits \r\n"));
+std::string getClientHostname(const std::string& ipAddress) {
+    struct sockaddr_in sa;
+    char host[1024];
+    char service[20];
+
+    sa.sin_family = AF_INET;
+    inet_pton(AF_INET, ipAddress.c_str(), &sa.sin_addr);
+
+    int result = getnameinfo((struct sockaddr*)&sa, sizeof(sa), host, sizeof(host), service, sizeof(service), 0);
+    if (result != 0) {
+        std::cerr << "Error getting client hostname: " << gai_strerror(result) << std::endl;
+        return ipAddress; // Fallback to IP address if hostname cannot be resolved
     }
-    if(keyPass == true)
-    {
-		std::cout<<"check password"<<std::endl;
-        if(paramsIndex >= params.size())
-        {
-            throw(std::invalid_argument("anvalide pass word\r\n"));
-			return;
+
+    return std::string(host);
+}
+
+void Channel::join(Client &client, int index, std::vector<std::string> params, size_t &paramsIndex) {
+    if (invite == true) {
+        if (inviteClients.find(index) == inviteClients.end()) {
+            throw(std::invalid_argument("not invited\r\n"));
         }
-		else if(password.compare(params[paramsIndex]))
-		{
-			std::cout<<"---> invalide password"<<std::endl;
-            throw(std::invalid_argument("anvalide pass word\r\n"));
-			return;
-		}
-		std::cout<<"hada"<<std::endl;
-	}
-	if(Clients.empty())
+    }
+    if (limit == true) {
+        if (limits == Clients.size()) {
+            throw(std::invalid_argument("limits \r\n"));
+        }
+    }
+    if (keyPass == true) {
+        if (paramsIndex >= params.size()) {
+            throw(std::invalid_argument("invalid password\r\n"));
+        } else if (password.compare(params[paramsIndex])) {
+            throw(std::invalid_argument("invalid password\r\n"));
+        }
+    }
+    if (Clients.empty()) {
         operators[index] = client;
-    if(Clients.find(index) == Clients.end())
-    {
+    }
+    if (Clients.find(index) == Clients.end()) {
         Clients[index] = client;
-	    std::cout<<"hahowa fost channel "<<Clients[index].nickNameGetter()<<std::endl;
-        std::ostringstream response;
-        response << ":" << Clients[index].nickNameGetter() << " JOIN " << name<<"\r\n";
-        send(index, response.str().c_str(), response.str().size(), 0);
-        if(!topic.empty())
-        {
-            std::cout<<"salam"<<std::endl; 
 
-            std::ostringstream s;
-            s<<":WEBSERVE 332 "<<Clients[index].nickNameGetter()<< " "<<name<<" :"<<topic<<"\r\n";
-            send(index, s.str().c_str(), s.str().size(), 0);
+        // Get and set the client's hostname
+        client.hostname = getClientHostname(client.IpAddressGetter());
+
+        // Notify all users in the channel about the new join
+        std::ostringstream joinNotif;
+        joinNotif << ":" << client.nickNameGetter() << "!" << client.userNameGetter() << "@" << client.hostname << " JOIN :" << name << "\r\n";
+        std::map<int, Client>::iterator it;
+        for (it = Clients.begin(); it != Clients.end(); ++it) {
+            send(it->first, joinNotif.str().c_str(), joinNotif.str().size(), 0);
         }
 
+        // Send the JOIN response to the new client
+        // send(index, joinNotif.str().c_str(), joinNotif.str().size(), 0);
+
+        // If a topic is set, send RPL_TOPIC (332)
+        if (!topic.empty()) {
+            std::ostringstream topicResponse;
+            topicResponse << ":WEBSERV 332 " << client.nickNameGetter() << " " << name << " :" << topic << "\r\n";
+            send(index, topicResponse.str().c_str(), topicResponse.str().size() - 1, 0);
+        } 
+        // else {
+        //     // RPL_NOTOPIC (331) - No topic is set
+        //     std::ostringstream noTopicResponse;
+        //     noTopicResponse << ":WEBSERV 331 " << client.nickNameGetter() << " " << this->name << " :No topic is set\r\n";
+        //     send(index, noTopicResponse.str().c_str(), noTopicResponse.str().size(), 0);
+        // }
+//s
+        // RPL_NAMREPLY (353) - List of users in the channel
+        std::ostringstream namesResponse;
+        namesResponse << ":WEBSERV 353 " << client.nickNameGetter() << " = " << this->name << " :";
+        for (it = Clients.begin(); it != Clients.end(); ++it) {
+            namesResponse << it->second.nickNameGetter() << " ";
+        }
+        namesResponse << "\r\n";
+        send(index, namesResponse.str().c_str(), namesResponse.str().size(), 0);
+
+        // RPL_ENDOFNAMES (366) - End of the list of users
+        std::ostringstream endNamesResponse;
+        endNamesResponse << ":WEBSERV 366 " << client.nickNameGetter() << " " << this->name << " :End of /NAMES list\r\n";
+        send(index, endNamesResponse.str().c_str(), endNamesResponse.str().size(), 0);
     }
 }
+
+    

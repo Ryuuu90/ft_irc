@@ -84,4 +84,5 @@ class Server
         bool checkNickName(std::string nName);
         void UserCommand(int fd, std::vector<std::string> &vec);
         bool checkControlD(int rec);
+        void commands(std::string msg,std::vector<struct pollfd>fds, int index);
 };

@@ -10,6 +10,7 @@ class Client
         std::string userName;
         std::string IpAddress;
     public:
+        std::string hostname;
         bool operat;
         std::string nickName;
         Client();

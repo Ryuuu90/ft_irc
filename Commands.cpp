@@ -322,11 +322,8 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                 {
                     std::cout<<"--->"<<IT1->first<<std::endl;
                     std::ostringstream response;
-                    if(IT1->first != fds[index].fd)
-                    {
-                        response << ":" <<Clients[fds[index].fd].nickNameGetter() << " PRIVMSG " << str << " :" << msg << "\r\n";
-                        send(IT1->first, response.str().c_str(), response.str().size(), 0);
-                    }
+                    response << ":" <<Clients[fds[index].fd].nickNameGetter() << " PRIVMSG " << str << " :" << msg << "\r\n";
+                    send(IT1->first, response.str().c_str(), response.str().size(), 0);
                 }
             }
         }

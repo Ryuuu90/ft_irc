@@ -363,19 +363,31 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                     send(fds[index].fd,"You're not part of this channel\r\n",34,0);
                     return;
                 }
-                std::cout<<"--->"<<"lqaha"<<std::endl;
+                std::string msg1;
+                ss>>msg1;
+                std::string msg;
                 std::string line;
-                std::getline(ss,line);
-                std::cout<<"--->"<<str<<std::endl;
-                std::string msg = line + "\r\n";
+                // ss >> str;
+                // std::cout<<str<<" haaaa "<<it8->first<<std::endl;
+                if(msg1[0] == ':')
+                {
+                    msg1.erase(msg1.begin());
+                    std::getline(ss, line);
+                    line.erase(line.end() - 1);
+                    msg = msg1 + line;
+                    std::cout<<"here channel ;"<<msg<<std::endl;
+                }
+                else
+                    msg = msg1;
                 std::map<int, Client>::iterator IT1;
                 std::cout<<"--->"<<Channels[str].Clients.begin()->second.nickNameGetter()<<std::endl;
+                std::ostringstream response;
+                response << ":" <<Clients[fds[index].fd].nickNameGetter() << " PRIVMSG " << str << " :" << msg << "\r\n";
                 for(IT1 = Channels[str].Clients.begin(); IT1 != Channels[str].Clients.end(); IT1++)
                 {
                     std::cout<<"--->"<<IT1->first<<std::endl;
-                    std::ostringstream response;
-                    response << ":" <<Clients[fds[index].fd].nickNameGetter() << " PRIVMSG " << str << " :" << msg << "\r\n";
-                    send(IT1->first, response.str().c_str(), response.str().size(), 0);
+                    if (IT1->first != fds[index].fd)
+                        send(IT1->first, response.str().c_str(), response.str().size(), 0);
                 }
             }
         }
@@ -388,14 +400,21 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                 if (!it8->second.nickNameGetter().compare(str))
                 {
                     std::string recipient = str;
+                    ss>>str;
                     std::string msg;
-                    std::getline(ss, str);
-                    // ss >> str;
-                    // std::cout<<str<<" haaaa "<<it8->first<<std::endl;
-                    msg = str.substr(1);
+                    std::string line;
+                    if(str[0] == ':')
+                    {
+                        str.erase(str.begin());
+                        std::getline(ss, line);
+                        line.erase(line.end() - 1);
+                        msg = str + line;
+                        std::cout<<"here user; "<<msg<<std::endl;
+                    }
+                    else
+                        msg = str;        
                     std::ostringstream response;
                     response << ":" << Clients[fds[index].fd].nickNameGetter()<< " PRIVMSG " << recipient << " :" << msg << "\r\n";
-                    
                     send(it8->first, response.str().c_str(), response.str().size(), 0);
                     break;
                 }

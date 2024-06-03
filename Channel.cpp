@@ -88,7 +88,7 @@ void Channel::mode(std::string input, int index)
     std::vector<std::vector<std::string> > vect;
     vect = split_input(input,vect);
     if(vect[0].empty())
-        throw(std::logic_error(""));
+        throw(std::logic_error("VECTOR EMPTY\r\n"));
     size_t i = 0;
     while (i < vect.size())
     {
@@ -199,7 +199,7 @@ void Channel::mode(std::string input, int index)
                         }
                     }
                     if (it == Clients.end())
-                        throw(std::logic_error(""));
+                        throw(std::logic_error("invalid user name\r\n"));
                 }
                 else if(vect[0][i][j] == 'l')
                 {

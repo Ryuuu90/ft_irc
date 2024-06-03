@@ -263,7 +263,7 @@ void Channel::join(Client &client, int index, std::vector<std::string> params, s
             std::cout<<"salam"<<std::endl; 
 
             std::ostringstream s;
-            s<<":WEBSERVE 332 "<<Clients[index].nickNameGetter()<< " "<<name<<" :"<<topic<<"\r\n";
+            s<<":WEBSERV 332 "<<Clients[index].nickNameGetter()<< " "<<name<<" :"<<topic<<"\r\n";
             send(index, s.str().c_str(), s.str().size(), 0);
         }
 

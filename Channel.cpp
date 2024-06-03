@@ -285,7 +285,7 @@ void Channel::join(Client &client, int index, std::vector<std::string> params, s
             noTopicResponse << ":WEBSERV 331 " << client.nickNameGetter() << " " << this->name << " :No topic is set\r\n";
             send(index, noTopicResponse.str().c_str(), noTopicResponse.str().size(), 0);
         }
-
+//s
         // RPL_NAMREPLY (353) - List of users in the channel
         std::ostringstream namesResponse;
         namesResponse << ":WEBSERV 353 " << client.nickNameGetter() << " = " << this->name << " :";

@@ -55,17 +55,17 @@ void Server::serverSocket()
     this->npollfd.revents = 0;
     fds.push_back(this->npollfd);
 }
-void Server::msgToClient(int fd, std::string msg)
+void Server::msgToClient(int fd, std::string msg, int errorNum)
 {
     std::stringstream ss;
-    ss << RED ": <" << fd << ">" << msg << RESET;
+    ss <<":WEBSERV "<< errorNum << " " << fd <<  msg;
     msg = ss.str();
     send(fd, msg.c_str(), msg.size(), 0);
 }
-void Server::ParamMsgClient(int fd, std::string command , std::string msg)
+void Server::ParamMsgClient(int fd, std::string command , std::string msg, int errorNum)
 {
     std::stringstream ss;
-    ss << RED << ": <" << fd << ">" << " <" << command << ">" << msg << RESET;
+    ss << ":WEBSERV " << errorNum << " " << fd << " " << RED << command  << ":"<< msg;
     msg = ss.str();
     send(fd, msg.c_str(), msg.size(), 0);
 }
@@ -102,24 +102,22 @@ void Server::UserCommand(int fd, std::vector<std::string> &vec)
         send(fd, msg.c_str(), msg.size(), 0);
     }
     if(vec[0] == "USER" && vec.size() < 5)
-        ParamMsgClient(fd, vec[0], " 461 :Not enough parameters\r\n");
+        ParamMsgClient(fd, vec[0], " :Not enough parameters\r\n", 461);
     if(vec[0] == "USER" && vec.size() > 6)
-        ParamMsgClient(fd, vec[0], " :Too much parameters\r\n");
-    // if((vec.size() == 5 || vec.size() == 6) && vec[0] == "USER" && Clients.find(fd) != Clients.end() && Clients.size() != 1)
-    //     msgToClient(fd, " 462 :You may not reregister\r\n");
+        ParamMsgClient(fd, vec[0], " :Too much parameters\r\n", 0);
     if(vec[0] == "USER" && (vec.size() == 5 || vec.size() == 6))
     {
         if(vec[2] != "0" || vec[3] != "*")
-            ParamMsgClient(fd, vec[0], " :The third paramter should be '0' and the fourth parameter should be '*'.\r\n");
+            ParamMsgClient(fd, vec[0], " :The third paramter should be '0' and the fourth parameter should be '*'.\r\n", 0);
         else if(vec[4][0] != ':')
-            ParamMsgClient(fd, vec[0], " :The real should prefixed with a colon(:).\r\n");
+            ParamMsgClient(fd, vec[0], " :The real should prefixed with a colon(:).\r\n", 0);
         else
         {
             Clients[fd].userNameSetter(vec[1]);
             vec[4].erase(vec[4].begin());
             if(vec[4].empty())
             {
-                ParamMsgClient(fd, vec[0], " :Enter your realname.\r\n");
+                ParamMsgClient(fd, vec[0], " :Enter your realname.\r\n", 0);
                 return;
             }
             else if(vec.size() == 5)
@@ -144,19 +142,19 @@ void Server::NickCommand(int fd, std::vector<std::string> &vec)
         send(fd, msg.c_str(), msg.size(), 0);
     }
     if(vec[0] == "NICK" && vec.size() == 1)
-        msgToClient(fd, "431 :No nickname given\r\n");
+        msgToClient(fd, " :\033[1;31mNo nickname given\033[0m\r\n", 431);
     if(vec[0] == "NICK" && vec.size() > 2)
-        ParamMsgClient(fd, vec[0], " :Too much parameters\r\n");
+        ParamMsgClient(fd, vec[0], " :Too much parameters\r\n", 0);
     if(vec[0] == "NICK" && vec.size() == 2)
     {
         if(NickNameInUse(vec[1], fd))
         {
-            ParamMsgClient(fd, vec[1], " 433 :Nickname is already in use.\r\n");
+            ParamMsgClient(fd, vec[1], " :Nickname is already in use.\033[0m\r\n", 433);
         }
         else
         {
             if(!checkNickName(vec[1]))
-                ParamMsgClient(fd, vec[1], " 432 :Erroneus nickname.\r\n");
+                ParamMsgClient(fd, vec[1], " :Erroneus nickname.\033[0m\r\n", 432);
             else
             {
                 this->authenFlag[fd]++;
@@ -186,12 +184,7 @@ void Server::PassCommand(int fd, std::vector<std::string> &vec)
         send(fd, msg.c_str(), msg.size(), 0);
     }
     if(vec.size() != 2 && vec[0] == "PASS")
-        ParamMsgClient(fd, vec[0], " 461 :Not enough parameters\r\n");
-    // if(vec.size() == 2 && vec[0] == "PASS" && Clients.find(fd) != Clients.end() && Clients.size() != 1)
-    // {    
-    //     msgToClient(fd, " 462 :You may not reregister\r\n");
-    //     return;
-    // }
+        ParamMsgClient(fd, vec[0], " :Not enough parameters\033[0m\r\n", 461);
     if(vec.size() == 2 && vec[0] == "PASS")
     {
         std::cout << YELLOW << "'" << fd << "'" << RESET << std::endl;
@@ -201,7 +194,7 @@ void Server::PassCommand(int fd, std::vector<std::string> &vec)
             std::cout << GREEN2 << "Client (" << fd << ") Connected." << RESET << std::endl;
         }
         else
-            msgToClient(fd, " 464 :Password incorrect\r\n");
+            msgToClient(fd, " :\033[1;31mPassword incorrect\033[0m\r\n", 464);
     }
     if(this->authenFlag[fd] == 1)
     {

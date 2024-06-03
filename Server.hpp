@@ -76,8 +76,8 @@ class Server
         void acceptClients();
         void receiveData(int index);
         void authentication(std::string buff, int index);
-        void ParamMsgClient(int fd, std::string command, std::string msg);
-        void msgToClient(int fd, std::string msg);
+        void ParamMsgClient(int fd, std::string command, std::string msg, int errorNum);
+        void msgToClient(int fd, std::string msg, int errorNum);
         void PassCommand(int fd, std::vector<std::string> &vec);
         void NickCommand(int fd, std::vector<std::string> &vec);
         bool NickNameInUse(std::string nName, int fd);

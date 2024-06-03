@@ -288,7 +288,7 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
         {
             if (Channels.find(targetChannel) != Channels.end())
             {
-                if (Channels[targetChannel].operators.find(fds[index].fd) == Channels[targetChannel].operators.end())
+                if ((Channels[targetChannel].operators.find(fds[index].fd) == Channels[targetChannel].operators.end()) && Channels[targetChannel].invite)
                 {
                     std::string errMsg = ":WEBSERV 482 " + Clients[fds[index].fd].nickNameGetter() + " " + targetChannel + " :You're not channel operator\r\n";
                     send(fds[index].fd, errMsg.c_str(), errMsg.size(), 0);
@@ -302,6 +302,12 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                     return;
                 }
 
+                std::map<int, Client>::iterator it;
+                for (it = Channels[targetChannel].inviteClients.begin(); it != Channels[targetChannel].inviteClients.end(); it++)
+                {
+                    if (it->second.nickNameGetter() == str)
+                        return;
+                }
                 std::map<int, Client>::iterator itClient;
                 bool userFound = false;
                 for (itClient = Clients.begin(); itClient != Clients.end(); itClient++)

@@ -179,47 +179,61 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                 if (Channels[str].operators.find(fds[index].fd) == Channels[str].operators.end() && Channels[str].restrictionsTOPIC)
                 {
                     std::ostringstream errorResponse;
-
                     errorResponse << ":WEBSERV 482 " << Clients[index].nickNameGetter() << " " << Channels[str].name << " :You're not channel operator";
                     send(fds[index].fd, errorResponse.str().c_str(), errorResponse.str().size(), 0);
-
                     return;
                 }
                 if(Channels[str].Clients.find(fds[index].fd) == Channels[str].Clients.end())
                 {
                     std::ostringstream errorResponse;
-
                     errorResponse << ":WEBSERV 442 " << Clients[index].nickNameGetter() << " " << Channels[str].name  << " :You're not on that channel";
                     send(fds[index].fd, errorResponse.str().c_str(), errorResponse.str().size(), 0);
-
                     return;
                 }
                 std::string topic;
+                std::string topicSub;
                 std::getline(ss, topic);
-                if (topic.empty() && Channels[str].topic.empty())
+                topicSub = topic.substr(0, topic.size() - 1);
+                std::cout << "[" << topicSub << "]"<< std::endl;
+                if (topicSub.empty() && Channels[str].topic.empty())
                 {
-                     std::ostringstream response;
-
                     std::string errMsg = ":WEBSERV 331 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :No topic is set\r\n";
                     send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
                     return;
                 }
-                else if (topic.empty())
+                else if (topicSub.empty())
                 {
+                    std::cout << "Topic: 1" << topicSub <<"1" <<std::endl;
+                    std::cout << "1Topic: " << Channels[str].topic << std::endl;
                     std::string msg = ":WEBSERV 332 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :" + Channels[str].topic + "\r\n";
                     send(fds[index].fd, msg.c_str(), msg.size(), 0);
+
+                    // Sending RPL_TOPIC to all users in the channel
+                    std::ostringstream topicResponseAll;
+                    topicResponseAll << ":WEBSERV 332 " << Clients[index].nickNameGetter() << " " << str << " :" << Channels[str].topic << "\r\n";
+                    std::map<int, Client>::iterator it;
+                    for (it = Channels[str].Clients.begin(); it != Channels[str].Clients.end(); ++it) {
+                        send(it->first, topicResponseAll.str().c_str(), topicResponseAll.str().size(), 0);
+                    }
+
                     return;
                 }
                 else
                 {
-                    // //Notify all users in the channel about the new topic
-                    // for (int user_fd : channel.user_fds) {
-                        // response.str("");
-                        // response.clear();
-                        // response << ":" << client.nickname << " TOPIC " << channel_name << " :" << new_topic << "\r\n";
-                        // send(user_fd, response.str().c_str(), response.str().size(), 0);
+                     std::cout << "--->Topic: 2" << topicSub <<"12" <<std::endl;
+
                     Channels[str].topic = topic.substr(1, topic.size() - 1);
-                    std::cout << "Topic: " << Channels[str].topic << std::endl;
+                    std::cout << "2Topic:" << Channels[str].topic << std::endl;
+
+                    // Sending RPL_TOPIC to all users in the channel
+                    std::ostringstream topicResponseAll;
+                    topicResponseAll << ":WEBSERV 332 " << Clients[index].nickNameGetter() << " " << str << " :" << Channels[str].topic << "\r\n";
+                    std::map<int, Client>::iterator it;
+                    for (it = Channels[str].Clients.begin(); it != Channels[str].Clients.end(); ++it) {
+                        send(it->first, topicResponseAll.str().c_str(), topicResponseAll.str().size(), 0);
+                    }
+
+                    return;
                 }
             }
             else
@@ -235,7 +249,6 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
             send(fds[index].fd, errMsg.c_str(), errMsg.size(), 0);
             return;
         }
-
     }
     else if (str == "INVITE")
     {

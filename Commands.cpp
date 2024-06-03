@@ -277,59 +277,68 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
     else if (str == "INVITE")
     {
         ss >> str;
-        std::string str2;
-        if (!(ss >> str2))
+        std::string targetChannel;
+        if (!(ss >> targetChannel))
         {
-            std::cout << "--------INVITE bool : " <<  Channels[str2].invite << std::endl;
             std::string errMsg = ":WEBSERV 461 " + Clients[fds[index].fd].nickNameGetter() + " INVITE :Not enough parameters\r\n";
             send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
             return;
         }
-        if(str2[0] == '#')
+        if (targetChannel[0] == '#')
         {
-            if(Channels.find(str2) != Channels.end())
+            if (Channels.find(targetChannel) != Channels.end())
             {
-                if (Channels[str2].operators.find(fds[index].fd) == Channels[str2].operators.end())
+                if (Channels[targetChannel].operators.find(fds[index].fd) == Channels[targetChannel].operators.end())
                 {
-                    std::string errMsg = ":WEBSERV 482 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :You're not channel operator\r\n";
+                    std::string errMsg = ":WEBSERV 482 " + Clients[fds[index].fd].nickNameGetter() + " " + targetChannel + " :You're not channel operator\r\n";
                     send(fds[index].fd, errMsg.c_str(), errMsg.size(), 0);
                     return;
                 }
-                // if (Channels[str2].invite)
-                // {
-                //     send(fds[index].fd,"You can't invite in this channel\r\n",34,0);
-                //     return;
-                // }
-                
-                if(Channels[str2].Clients.find(fds[index].fd) == Channels[str2].Clients.end())
+
+                if (Channels[targetChannel].Clients.find(fds[index].fd) == Channels[targetChannel].Clients.end())
                 {
-                    std::string errMsg = ":WEBSERV 442 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :You're not on that channel\r\n";
+                    std::string errMsg = ":WEBSERV 442 " + Clients[fds[index].fd].nickNameGetter() + " " + targetChannel + " :You're not on that channel\r\n";
                     send(fds[index].fd, errMsg.c_str(), errMsg.size(), 0);
                     return;
                 }
 
                 std::map<int, Client>::iterator itClient;
-                for(itClient = Clients.begin(); itClient != Clients.end(); itClient++)
+                bool userFound = false;
+                for (itClient = Clients.begin(); itClient != Clients.end(); itClient++)
                 {
-                    if(itClient->second.nickNameGetter() == str)
+                    if (itClient->second.nickNameGetter() == str)
                     {
-                        Channels[str2].inviteClients[itClient->first] = itClient->second;
+                        userFound = true;
+                        Channels[targetChannel].inviteClients[itClient->first] = itClient->second;
+
+                        // Notify the invited user
+                        std::ostringstream inviteNotice;
+                        inviteNotice << ":" << Clients[fds[index].fd].nickNameGetter() << " INVITE " << str << " :" << targetChannel << "\r\n";
+                        send(itClient->first, inviteNotice.str().c_str(), inviteNotice.str().size(), 0);
+
+                        // Confirm the invitation to the inviter
+                        std::ostringstream confirmInvite;
+                        confirmInvite << ":WEBSERV 341 " << Clients[fds[index].fd].nickNameGetter() << " " << str << " " << targetChannel << "\r\n";
+                        send(fds[index].fd, confirmInvite.str().c_str(), confirmInvite.str().size(), 0);
 
                         std::map<int, Client>::iterator it;
-                        for(it = Channels[str2].inviteClients.begin(); it != Channels[str2].inviteClients.end(); it++)
+                        for (it = Channels[targetChannel].inviteClients.begin(); it != Channels[targetChannel].inviteClients.end(); it++)
                         {
                             std::cout << it->first << "*-*-* " << it->second.nickNameGetter() << std::endl;
-                        }       
+                        }
                         return;
                     }
                 }
-                std::string errMsg = ":WEBSERV 401 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :No such nick/channel\r\n";
-                send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
-                return;
+                if (!userFound)
+                {
+                    std::string errMsg = ":WEBSERV 401 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :No such nick/channel\r\n";
+                    send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
+                    return;
+                }
             }
             else
             {
-                std::string errMsg = ":WEBSERV 403 " + Clients[fds[index].fd].nickNameGetter() + " " + str2 + " :No such channel\r\n";
+                std::string errMsg = ":WEBSERV 403 " + Clients[fds[index].fd].nickNameGetter() + " " + targetChannel + " :No such channel\r\n";
                 send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
                 return;
             }
@@ -340,9 +349,7 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
             send(fds[index].fd, errMsg.c_str(), errMsg.size(), 0);
             return;
         }
-
     }
-    
     else if(str == "PRIVMSG")
     {
         ss>>str;

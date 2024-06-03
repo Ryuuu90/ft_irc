@@ -405,7 +405,31 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
     else if (str == "JDM")
     {
         Bot bot;
-        msg = "\033[0;35mJDMbot:\033[0;36m " + bot.getRandomFact() + "\033[0m\r\n";
-        send(fds[index].fd, msg.c_str(), msg.size(), 0);
+        std::string fact = bot.getRandomFact();
+        std::string channel;
+        ss >> channel;
+
+        if (channel[0] == '#')
+        {
+            if (Channels.find(channel) != Channels.end())
+            {
+                std::string msg = "\033[0;35mJDMbot:\033[0;36m " + fact + "\033[0m\r\n";
+                std::map<int, Client>::iterator it;
+                for (it = Channels[channel].Clients.begin(); it != Channels[channel].Clients.end(); ++it)
+                {
+                    send(it->first, msg.c_str(), msg.size(), 0);
+                }
+            }
+            else
+            {
+                std::string errMsg = ":WEBSERV 403 " + Clients[fds[index].fd].nickNameGetter() + " " + channel + " :No such channel\r\n";
+                send(fds[index].fd, errMsg.c_str(), errMsg.size(), 0);
+            }
+        }
+        else
+        {
+            std::string msg = "\033[0;35mJDMbot:\033[0;36m " + fact + "\033[0m\r\n";
+            send(fds[index].fd, msg.c_str(), msg.size(), 0);
+        }
     }
 }

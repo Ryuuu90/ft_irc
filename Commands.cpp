@@ -387,13 +387,16 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                 std::cout<<it8->second.nickNameGetter()<<" ";
                 if (!it8->second.nickNameGetter().compare(str))
                 {
-                    std::string input;
+                    std::string recipient = str;
+                    std::string msg;
                     std::getline(ss, str);
                     // ss >> str;
                     // std::cout<<str<<" haaaa "<<it8->first<<std::endl;
-                    input = str.substr(1,str.size() - 1);
-                    std::string mm = input + "\r\n";
-                    send(it8->first, mm.c_str(), mm.size(), 0);
+                    msg = str.substr(1);
+                    std::ostringstream response;
+                    response << ":" << Clients[fds[index].fd].nickNameGetter()<< " PRIVMSG " << recipient << " :" << msg << "\r\n";
+                    
+                    send(it8->first, response.str().c_str(), response.str().size(), 0);
                     break;
                 }
                 

@@ -198,6 +198,8 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                 std::getline(ss, topic);
                 if (topic.empty() && Channels[str].topic.empty())
                 {
+                     std::ostringstream response;
+
                     std::string errMsg = ":WEBSERV 331 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :No topic is set\r\n";
                     send(fds[index].fd, errMsg.c_str(), errMsg.length(), 0);
                     return;
@@ -210,6 +212,12 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                 }
                 else
                 {
+                    // //Notify all users in the channel about the new topic
+                    // for (int user_fd : channel.user_fds) {
+                        // response.str("");
+                        // response.clear();
+                        // response << ":" << client.nickname << " TOPIC " << channel_name << " :" << new_topic << "\r\n";
+                        // send(user_fd, response.str().c_str(), response.str().size(), 0);
                     Channels[str].topic = topic.substr(1, topic.size() - 1);
                     std::cout << "Topic: " << Channels[str].topic << std::endl;
                 }

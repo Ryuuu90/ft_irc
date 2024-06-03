@@ -278,13 +278,14 @@ void Channel::join(Client &client, int index, std::vector<std::string> params, s
         if (!topic.empty()) {
             std::ostringstream topicResponse;
             topicResponse << ":WEBSERV 332 " << client.nickNameGetter() << " " << name << " :" << topic << "\r\n";
-            send(index, topicResponse.str().c_str(), topicResponse.str().size(), 0);
-        } else {
-            // RPL_NOTOPIC (331) - No topic is set
-            std::ostringstream noTopicResponse;
-            noTopicResponse << ":WEBSERV 331 " << client.nickNameGetter() << " " << this->name << " :No topic is set\r\n";
-            send(index, noTopicResponse.str().c_str(), noTopicResponse.str().size(), 0);
-        }
+            send(index, topicResponse.str().c_str(), topicResponse.str().size() - 1, 0);
+        } 
+        // else {
+        //     // RPL_NOTOPIC (331) - No topic is set
+        //     std::ostringstream noTopicResponse;
+        //     noTopicResponse << ":WEBSERV 331 " << client.nickNameGetter() << " " << this->name << " :No topic is set\r\n";
+        //     send(index, noTopicResponse.str().c_str(), noTopicResponse.str().size(), 0);
+        // }
 //s
         // RPL_NAMREPLY (353) - List of users in the channel
         std::ostringstream namesResponse;

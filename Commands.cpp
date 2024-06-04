@@ -116,7 +116,7 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
             std::cout<<"bool invite "<<Channels[channelName].invite<<" keypass "<<Channels[channelName].password<<" limits "<<Channels[channelName].limits<<std::endl;
         }
     }
-     else if (str == "KICK")
+    else if (str == "KICK")
     {
         ss >> str;
         if (str[0] == '#')
@@ -142,12 +142,19 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                     {
                         userFound = true;
 
+                        if (itClient->first == fds[index].fd && Channels[str].operators.size() == 1)
+                        {
+                            std::ostringstream selfKickResponse;
+                            selfKickResponse << ":WEBSERV 485 " << Clients[fds[index].fd].nickNameGetter() << " :You cannot kick yourself as the only operator\r\n";
+                            send(fds[index].fd, selfKickResponse.str().c_str(), selfKickResponse.str().size(), 0);
+                            return;
+                        }
+
                         // Get the comment if any
                         std::string comment;
                         std::string commentSub;
                         std::getline(ss, comment);
                         commentSub = comment.substr(0, comment.size() - 1);
-                        std::cout << "Comment: [" << comment << "]" << std::endl;
                         if (commentSub.empty())
                             comment = "No reason specified";
                         else if (commentSub[0] == ' ')
@@ -155,12 +162,12 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
 
                         // Notify the kicked user
                         std::ostringstream kickNotice;
-                        kickNotice << ":" << Clients[fds[index].fd].nickNameGetter() << " KICK " << str << " " << targetUser << " :" << comment << "\r\n";
+                        kickNotice << ":" << Clients[fds[index].fd].nickNameGetter() << "!host KICK " << str << " " << targetUser << " :" << comment << "\r\n";
                         send(itClient->first, kickNotice.str().c_str(), kickNotice.str().size(), 0);
 
                         // Notify the channel about the kicked user
                         std::ostringstream channelNotice;
-                        channelNotice << ":" << Clients[fds[index].fd].nickNameGetter() << " KICK " << str << " " << targetUser << " :" << comment << "\r\n";
+                        channelNotice << ":" << Clients[fds[index].fd].nickNameGetter() << "!host KICK " << str << " " << targetUser << " :" << comment << "\r\n";
                         std::map<int, Client>::iterator itNotify;
                         for (itNotify = Channels[str].Clients.begin(); itNotify != Channels[str].Clients.end(); ++itNotify)
                         {

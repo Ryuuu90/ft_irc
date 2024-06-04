@@ -121,12 +121,12 @@ void Channel::mode(std::string input, int index)
 			response<< " +o";
 		}
 		response<<"\r\n";
-		for(IT = Clients.begin(); IT != Clients.end(); IT ++)
-		{
-			send(IT->first,response.str().c_str(),response.str().size(), 0);
+		// for(IT = Clients.begin(); IT != Clients.end(); IT ++)
+		// {
+		send(index,response.str().c_str(),response.str().size(), 0);
 			//:mokhalil!mokha@example.com MODE #channel +i
-		}
-		
+		// }
+		// 
 	}
     if(operators.find(index) == operators.end())
         throw(std::invalid_argument("Not valid operator!!\r\n"));

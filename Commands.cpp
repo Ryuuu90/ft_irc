@@ -399,8 +399,6 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                 ss>>msg1;
                 std::string msg;
                 std::string line;
-                // ss >> str;
-                // std::cout<<str<<" haaaa "<<it8->first<<std::endl;
                 if(msg1[0] == ':')
                 {
                     msg1.erase(msg1.begin());

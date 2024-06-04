@@ -13,12 +13,14 @@ class Channel
         unsigned int limits;
 		bool restrictionsTOPIC;
         std::string password;
+		int opCount;
         bool keyPass;
 		bool limit;
         bool invite;
 		std::map<int , Client> inviteClients;
         std::map<int , Client> operators;
         std::map<int , Client> Clients;
+		void updateUserCount();
         std::string name;
 		Channel();
 		Channel(std::string);

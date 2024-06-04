@@ -24,6 +24,7 @@ Channel::Channel(){}
 Channel::Channel(std::string Name)
 {
 	invite = false;
+	opCount = 0;
 	limit = false;
 	restrictionsTOPIC =false;
 	keyPass =false;
@@ -116,7 +117,7 @@ void Channel::mode(std::string input, int index)
 			response<<" +k";
 		if(restrictionsTOPIC)
 			response <<" +t";
-		if(operators.find(index)!= Clients.end())
+		if(operators.find(index)!= operators.end())
 		{
 			response<< " +o";
 		}
@@ -370,8 +371,10 @@ void Channel::join(Client &client, int index, std::vector<std::string> params, s
         }
 		std::cout<<"hada    -->"<<params[paramsIndex]<<std::endl;
     }
-    if (Clients.empty()) {
+    if (Clients.empty()) 
+	{
         operators[index] = client;
+		opCount++;
     }
     if (Clients.find(index) == Clients.end()) {
         Clients[index] = client;
@@ -392,24 +395,54 @@ void Channel::join(Client &client, int index, std::vector<std::string> params, s
         // If a topic is set, send RPL_TOPIC (332)
         if (!topic.empty()) {
             std::ostringstream topicResponse;
-			std::cout<<"----00 "<<topic<<std::endl;
+			std::cout<<"----00 "<<topic<<"1"<<std::endl;
             topicResponse << ":WEBSERV 332 " << client.nickNameGetter() << " " << name << " :" << topic << "\r\n";
-            send(index, topicResponse.str().c_str(), topicResponse.str().size() - 1, 0);
+            send(index, topicResponse.str().c_str(), topicResponse.str().size(), 0);
         } 
         // RPL_NAMREPLY (353) - List of users in the channel
+		// Kayn chi concept hnaya message ki trprinta check top dial terminal f blasst topic
         std::ostringstream namesResponse;
         namesResponse << ":WEBSERV 353 " << client.nickNameGetter() << " = " << this->name << " :";
         for (it = Clients.begin(); it != Clients.end(); ++it) {
+            if (operators.find(it->first) != operators.end())
+                namesResponse<<"@";
             namesResponse << it->second.nickNameGetter() << " ";
         }
         namesResponse << "\r\n";
-        send(index, namesResponse.str().c_str(), namesResponse.str().size(), 0);
 
         // RPL_ENDOFNAMES (366) - End of the list of users
         std::ostringstream endNamesResponse;
         endNamesResponse << ":WEBSERV 366 " << client.nickNameGetter() << " " << this->name << " :End of /NAMES list\r\n";
-        send(index, endNamesResponse.str().c_str(), endNamesResponse.str().size(), 0);
+        for (it = Clients.begin(); it != Clients.end(); ++it)
+        {
+            send(it->first, namesResponse.str().c_str(), namesResponse.str().size(), 0);
+            send(it->first, endNamesResponse.str().c_str(), endNamesResponse.str().size(), 0);
+        }
+
+		// If the client is an operator, send the mode change notification
+        if (operators.find(index) != operators.end()) {
+            std::ostringstream modeChangeResponse;
+            modeChangeResponse << ":" << client.nickNameGetter() << "!" << client.userNameGetter() << "@" << client.hostname << " MODE " << name << " +o " << client.nickNameGetter() << "\r\n";
+            for (it = Clients.begin(); it != Clients.end(); ++it) {
+                send(it->first, modeChangeResponse.str().c_str(), modeChangeResponse.str().size(), 0);
+            }
+        }
+
+		// Notify all users about the operator count update
+        updateUserCount();
+
     }
+
 }
 
     
+void Channel::updateUserCount() {
+    std::ostringstream userCountResponse;
+    userCountResponse << ":WEBSERV NOTICE " << name << " :Total of " << Clients.size() << " nicks ["
+                      << opCount << " ops, 0 halfops, 0 voices, "
+                      << Clients.size() - opCount << " normal]\r\n";
+    std::map<int, Client>::iterator it;
+    for (it = Clients.begin(); it != Clients.end(); ++it) {
+        send(it->first, userCountResponse.str().c_str(), userCountResponse.str().size(), 0);
+    }
+}

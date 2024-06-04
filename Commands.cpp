@@ -50,6 +50,7 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                     std::map<std::string, Channel>::iterator it = Channels.find(params[0][i]);
                     if(it == Channels.end())
                     {
+                        std::cout<<""<<std::endl;
                         try
                         {
                             std::cout<<"test TEST"<<std::endl;
@@ -103,6 +104,7 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
             }
             std::string input;
             std::getline(ss,input);
+            input.erase(input.end()-1);
             try
             {
                 Channels[channelName].mode(input, fds[index].fd);

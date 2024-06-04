@@ -78,144 +78,6 @@ std::vector<std::vector<std::string> > &split_input(std::string input ,std::vect
     return(vect);
 }
 
-
-void Channel::mode(std::string input, int index)
-{
-    if(input.size() < 2)
-        throw(std::invalid_argument("Not valide Argument!!\r\n"));
-    if(operators.find(index) == operators.end())
-        throw(std::invalid_argument("Not valide operator!!\r\n"));
-    std::vector<std::vector<std::string> > vect;
-    vect = split_input(input,vect);
-    if(vect[0].empty())
-        throw(std::logic_error("VECTOR EMPTY\r\n"));
-    size_t i = 0;
-    while (i < vect.size())
-    {
-        size_t l = 0;
-        while(l < vect[i].size())
-        {
-            std::cout<<vect[i][l]<<std::endl;
-            l++;
-        }
-        std::cout<<std::endl;
-        i++;
-    }
-    i = 0;
-    size_t k = 0;
-    while(i < vect[0].size())
-    {
-        size_t j = 0;
-        if(vect[0][i][j] == '+')
-        {
-            j++;
-            while(j < vect[0][i].size() && (vect[0][i][j] != '-' && vect[0][i][j] != '+'))
-            {
-                if(vect[0][i][j] == 'i')
-                    invite = true;
-                else if(vect[0][i][j] == 't')
-				{
-					restrictionsTOPIC = true;
-					// if(!vect[1].empty() && k < vect[1].size())
-					// {
-                    //     topic=vect[1][k];
-                    //     k++;
-                    // }
-				}
-                else if(vect[0][i][j] == 'k')
-                {
-                    keyPass = true;
-                    if(!vect[1].empty() && k < vect[1].size())
-                    {
-                        password = vect[1][k];
-                        k++;
-                    }
-                }
-                else if(vect[0][i][j] == 'o')
-                {
-                    std::map<int, Client>::iterator it;
-                    for (it = Clients.begin(); it != Clients.end() ; it++)
-                    {
-                        if (k < vect[1].size() && (it->second.nickNameGetter() == vect[1][k]))
-                        {
-                            operators[it->first] = it->second;
-                            k++;
-                            break;
-                        }
-                    }
-                    if (it == Clients.end())
-                        exit(0);
-                }
-                else if(vect[0][i][j] == 'l')
-                {
-                    //liberachat
-                    limit = true;
-                    if(!vect[1].empty() && k < vect[1].size())
-                    {
-                        std::cout<<vect[1][k];
-                        limits = std::atoi(vect[1][k].c_str());
-                        k++;
-                    }
-                }
-                j++;
-            }
-        }
-        else if(vect[0][i][j] == '-')
-        {
-            j++;
-            while(j < vect[0][i].size() && (vect[0][i][j] != '-' && vect[0][i][j] != '+'))
-            {
-                if(vect[0][i][j] == 'i')
-                    invite = false;
-                else if(vect[0][i][j] == 't')
-				{
-					restrictionsTOPIC = false;
-					// if(!vect[1].empty() && k < vect[1].size())
-					// {
-                    //     topic=vect[1][k];
-                    //     k++;
-                    // }
-				}
-                else if(vect[0][i][j] == 'k')
-                {
-                    keyPass = false;
-                    password = "";
-                    if(!vect[1].empty() && k < vect[1].size())
-                    {
-                        password = vect[1][k];
-                        k++;
-                    }
-                }
-                else if(vect[0][i][j] == 'o')
-                {
-                    std::map<int, Client>::iterator it;
-                    for (it = Clients.begin(); it != Clients.end() ; it++)
-                    {
-                        if (k < vect[1].size() && (it->second.nickNameGetter() == vect[1][k]))
-                        {
-                            operators.erase(it);
-                            k++;
-                            break;
-                        }
-                    }
-                    if (it == Clients.end())
-                        throw(std::logic_error("invalid user name\r\n"));
-                }
-                else if(vect[0][i][j] == 'l')
-                {
-                    limit = false;
-                    limits = -1;
-                }
-                j++;
-            }
-
-        }
-        i++;
-    }
-
- std::cout<<"bool invite "<<invite<<" keypass "<<password<<" bool key "<<keyPass<<" limits "<<limits<<std::endl;
-}
-
 #include <netdb.h>
 #include <arpa/inet.h>
 
@@ -236,6 +98,258 @@ std::string getClientHostname(const std::string& ipAddress) {
     return std::string(host);
 }
 
+void Channel::mode(std::string input, int index)
+{
+
+    std::map<int,Client>::iterator IT;
+	std::ostringstream response;
+    if(input.empty())
+	{
+		// :<server_name> 324 <nick> <channel> <modes> <parameters>
+		response<<":WEBSERV 324 "<<Clients[index].nickNameGetter()<<" ";
+		response<<this->name;
+		if(invite)
+			response<<" +i";
+		if(limit)
+			response<<" +l "<<limits;
+		if(keyPass)
+			response<<" +k";
+		if(restrictionsTOPIC)
+			response <<" +t";
+		if(operators.find(index)!= Clients.end())
+		{
+			response<< " +o";
+		}
+		response<<"\r\n";
+		for(IT = Clients.begin(); IT != Clients.end(); IT ++)
+		{
+			send(IT->first,response.str().c_str(),response.str().size(), 0);
+			//:mokhalil!mokha@example.com MODE #channel +i
+		}
+		
+	}
+    if(operators.find(index) == operators.end())
+        throw(std::invalid_argument("Not valid operator!!\r\n"));
+    std::vector<std::vector<std::string> > vect;
+    vect = split_input(input,vect);
+    if(vect[0].empty())
+        throw(std::logic_error("VECTOR EMPTY\r\n"));
+    size_t i = 0;
+    while (i < vect.size())
+    {
+        size_t l = 0;
+        while(l < vect[i].size())
+        {
+            std::cout<<vect[i][l]<<std::endl;
+            l++;
+        }
+        std::cout<<std::endl;
+        i++;
+    }
+	i = 0;
+    size_t k = 0;
+    while(i < vect[0].size())
+    {
+        size_t j = 0;
+        if(vect[0][i][j] == '+')
+        {
+            j++;
+            while(j < vect[0][i].size() && (vect[0][i][j] != '-' && vect[0][i][j] != '+'))
+            {
+                if(vect[0][i][j] == 'i')
+                {
+					invite = true;
+					response.clear();
+					response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
+    				response<<" MODE "<<this->name;
+					response<<" +i"<<"\r\n";
+					// if();
+					for(IT = Clients.begin(); IT != Clients.end(); IT ++)
+					{
+						send(IT->first,response.str().c_str(),response.str().size(), 0);
+						//:mokhalil!mokha@example.com MODE #channel +i
+					}
+                }
+                else if(vect[0][i][j] == 't')
+				{
+					restrictionsTOPIC = true;
+					response.clear();
+					response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
+    				response<<" MODE "<<this->name;
+					response<<" +t"<<"\r\n";
+					// if();
+					for(IT = Clients.begin(); IT != Clients.end(); IT ++)
+					{
+						send(IT->first,response.str().c_str(),response.str().size(), 0);
+						//:mokhalil!mokha@example.com MODE #channel +i
+					}
+				}
+                else if(vect[0][i][j] == 'k')
+                {
+                    keyPass = true;
+                    if(!vect[1].empty() && k < vect[1].size())
+                    {
+                        password = vect[1][k];
+						response.clear();
+						response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
+    					response<<" MODE "<<this->name;
+						response<<" +k "<<"\r\n";
+						// if();
+						for(IT = Clients.begin(); IT != Clients.end(); IT ++)
+						{
+							send(IT->first,response.str().c_str(),response.str().size(), 0);
+							//:mokhalil!mokha@example.com MODE #channel +i
+						}
+                        k++;
+                    }
+                }
+                else if(vect[0][i][j] == 'o')
+                {
+                    std::map<int, Client>::iterator it;
+                    for (it = Clients.begin(); it != Clients.end() ; it++)
+                    {
+                        if (k < vect[1].size() && (it->second.nickNameGetter() == vect[1][k]))
+                        {
+							response.clear();
+							response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
+    						response<<" MODE "<<this->name;
+							response<<" +o "<<it->second.nickNameGetter()<<"\r\n";
+							// if();
+							for(IT = Clients.begin(); IT != Clients.end(); IT ++)
+							{
+								send(IT->first,response.str().c_str(),response.str().size(), 0);
+								//:mokhalil!mokha@example.com MODE #channel +i
+							}
+                            operators[it->first] = it->second;
+                            k++;
+                            break;
+                        }
+                    }
+                    if (it == Clients.end())
+                        exit(0);
+                }
+                else if(vect[0][i][j] == 'l')
+                {
+                    //liberachat
+                    if(!vect[1].empty() && k < vect[1].size())
+                    {
+                        std::cout<<vect[1][k];
+						std::stringstream digit(vect[1][k]);
+                        // limits = std::atoi(vect[1][k].c_str());
+						digit >>limits;
+						if(digit.fail())
+							return;
+                    	limit = true;
+						response.clear();
+						response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
+    					response<<" MODE "<<this->name;
+						response<<" +l "<<limits<<"\r\n";
+						// if();
+						for(IT = Clients.begin(); IT != Clients.end(); IT ++)
+						{
+							send(IT->first,response.str().c_str(),response.str().size(), 0);
+							//:mokhalil!mokha@example.com MODE #channel +i
+						}
+                        k++;
+                    }
+                }
+                j++;
+            }
+        }
+        else if(vect[0][i][j] == '-')
+        {
+            j++;
+            while(j < vect[0][i].size() && (vect[0][i][j] != '-' && vect[0][i][j] != '+'))
+            {
+                if(vect[0][i][j] == 'i')
+				{
+					invite = false;
+					response.clear();
+					response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
+    				response<<" MODE "<<this->name;
+					response<<" -i"<<"\r\n";
+					for(IT = Clients.begin(); IT != Clients.end(); IT ++)
+					{
+						send(IT->first,response.str().c_str(),response.str().size(), 0);
+						//:mokhalil!mokha@example.com MODE #channel +i
+					}
+				}
+                else if(vect[0][i][j] == 't')
+				{
+					response.clear();
+					response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
+    				response<<" MODE "<<this->name;
+					response<<" -t"<<"\r\n";
+					restrictionsTOPIC = false;
+					for(IT = Clients.begin(); IT != Clients.end(); IT ++)
+					{
+						send(IT->first,response.str().c_str(),response.str().size(), 0);
+						//:mokhalil!mokha@example.com MODE #channel +i
+					}
+				}
+                else if(vect[0][i][j] == 'k')
+                {
+                    keyPass = false;
+                    password = "";
+                    response.clear();
+					response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
+    				response<<" MODE "<<this->name;
+					response<<" -k"<<"\r\n";
+					for(IT = Clients.begin(); IT != Clients.end(); IT ++)
+					{
+						send(IT->first,response.str().c_str(),response.str().size(), 0);
+						//:mokhalil!mokha@example.com MODE #channel +i
+					}
+                }
+                else if(vect[0][i][j] == 'o')
+                {
+                    std::map<int, Client>::iterator it;
+                    for (it = Clients.begin(); it != Clients.end() ; it++)
+                    {
+                        if (k < vect[1].size() && (it->second.nickNameGetter() == vect[1][k]))
+                        {
+                            operators.erase(it);
+							response.clear();
+							response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
+    						response<<" MODE "<<this->name;
+							response<<" -o "<<it->second.nickNameGetter()<<"\r\n";
+							for(IT = Clients.begin(); IT != Clients.end(); IT ++)
+							{
+								send(IT->first,response.str().c_str(),response.str().size(), 0);
+								//:mokhalil!mokha@example.com MODE #channel +i
+							}
+                            k++;
+                            break;
+                        }
+                    }
+                    if (it == Clients.end())
+                        throw(std::logic_error("invalid user name\r\n"));
+                }
+                else if(vect[0][i][j] == 'l')
+                {
+                    limit = false;
+                    limits = -1;
+					response.clear();
+					response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
+    				response<<" MODE "<<this->name;
+					response<<" -l"<<"\r\n";
+					for(IT = Clients.begin(); IT != Clients.end(); IT ++)
+					{
+						send(IT->first,response.str().c_str(),response.str().size(), 0);
+						//:mokhalil!mokha@example.com MODE #channel +i
+					}
+                }
+                j++;
+            }
+
+        }
+        i++;
+    }
+
+ std::cout<<"bool invite "<<invite<<" keypass "<<password<<" bool key "<<keyPass<<" limits "<<limits<<std::endl;
+}
+
+
 void Channel::join(Client &client, int index, std::vector<std::string> params, size_t &paramsIndex) {
     if (invite == true) {
         if (inviteClients.find(index) == inviteClients.end()) {
@@ -248,11 +362,13 @@ void Channel::join(Client &client, int index, std::vector<std::string> params, s
         }
     }
     if (keyPass == true) {
+		std::cout << "Index    -->"<<paramsIndex << std::endl;
         if (paramsIndex >= params.size()) {
             throw(std::invalid_argument("invalid password\r\n"));
         } else if (password.compare(params[paramsIndex])) {
             throw(std::invalid_argument("invalid password\r\n"));
         }
+		std::cout<<"hada    -->"<<params[paramsIndex]<<std::endl;
     }
     if (Clients.empty()) {
         operators[index] = client;
@@ -270,23 +386,16 @@ void Channel::join(Client &client, int index, std::vector<std::string> params, s
         for (it = Clients.begin(); it != Clients.end(); ++it) {
             send(it->first, joinNotif.str().c_str(), joinNotif.str().size(), 0);
         }
-
         // Send the JOIN response to the new client
         // send(index, joinNotif.str().c_str(), joinNotif.str().size(), 0);
 
         // If a topic is set, send RPL_TOPIC (332)
         if (!topic.empty()) {
             std::ostringstream topicResponse;
+			std::cout<<"----00 "<<topic<<std::endl;
             topicResponse << ":WEBSERV 332 " << client.nickNameGetter() << " " << name << " :" << topic << "\r\n";
             send(index, topicResponse.str().c_str(), topicResponse.str().size() - 1, 0);
         } 
-        // else {
-        //     // RPL_NOTOPIC (331) - No topic is set
-        //     std::ostringstream noTopicResponse;
-        //     noTopicResponse << ":WEBSERV 331 " << client.nickNameGetter() << " " << this->name << " :No topic is set\r\n";
-        //     send(index, noTopicResponse.str().c_str(), noTopicResponse.str().size(), 0);
-        // }
-//s
         // RPL_NAMREPLY (353) - List of users in the channel
         std::ostringstream namesResponse;
         namesResponse << ":WEBSERV 353 " << client.nickNameGetter() << " = " << this->name << " :";

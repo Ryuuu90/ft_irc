@@ -116,7 +116,7 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
             std::cout<<"bool invite "<<Channels[channelName].invite<<" keypass "<<Channels[channelName].password<<" limits "<<Channels[channelName].limits<<std::endl;
         }
     }
-    else if (str == "KICK")
+     else if (str == "KICK")
     {
         ss >> str;
         if (str[0] == '#')
@@ -136,7 +136,7 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
 
                 bool userFound = false;
                 std::map<int, Client>::iterator itClient;
-                for (itClient = Channels[str].Clients.begin(); itClient != Channels[str].Clients.end(); itClient++)
+                for (itClient = Channels[str].Clients.begin(); itClient != Channels[str].Clients.end(); ++itClient)
                 {
                     if (itClient->second.nickNameGetter() == targetUser)
                     {
@@ -151,7 +151,7 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                         if (commentSub.empty())
                             comment = "No reason specified";
                         else if (commentSub[0] == ' ')
-                                comment = commentSub.substr(1, comment.size() - 1);
+                            comment = commentSub.substr(1, comment.size() - 1);
 
                         // Notify the kicked user
                         std::ostringstream kickNotice;
@@ -162,12 +162,20 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                         std::ostringstream channelNotice;
                         channelNotice << ":" << Clients[fds[index].fd].nickNameGetter() << " KICK " << str << " " << targetUser << " :" << comment << "\r\n";
                         std::map<int, Client>::iterator itNotify;
-                        for (itNotify = Channels[str].Clients.begin(); itNotify != Channels[str].Clients.end(); itNotify++)
+                        for (itNotify = Channels[str].Clients.begin(); itNotify != Channels[str].Clients.end(); ++itNotify)
                         {
                             send(itNotify->first, channelNotice.str().c_str(), channelNotice.str().size(), 0);
                         }
 
                         Channels[str].Clients.erase(itClient);
+
+                        // If the kicked user is also the one issuing the kick command (self-kick)
+                        if (itClient->first == fds[index].fd)
+                        {
+                            std::ostringstream selfKickResponse;
+                            selfKickResponse << ":WEBSERV 485 " << Clients[fds[index].fd].nickNameGetter() << " :You have kicked yourself\r\n";
+                            send(fds[index].fd, selfKickResponse.str().c_str(), selfKickResponse.str().size(), 0);
+                        }
                         break;
                     }
                 }
@@ -220,7 +228,7 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                 std::string topicSub;
                 std::getline(ss, topic);
                 topicSub = topic.substr(0, topic.size() - 1);
-                std::cout << "[" << topicSub << "]"<< std::endl;
+                std::cout << "sub" << "[" << topicSub << "]"<< std::endl;
                 if (topicSub.empty() && Channels[str].topic.empty())
                 {
                     std::string errMsg = ":WEBSERV 331 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :No topic is set\r\n";
@@ -246,10 +254,19 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                 }
                 else
                 {
-                     std::cout << "--->Topic: 2" << topicSub <<"12" <<std::endl;
-
-                    Channels[str].topic = topic.substr(1, topic.size() - 1);
-                    std::cout << "2Topic:" << Channels[str].topic << std::endl;
+                    std::cout << "--->TopicSub[" << topicSub <<"]" <<std::endl;
+                    // std::cout << "--->Topic[" << topic <<"]" <<std::endl;
+                    if (topicSub[0] == ' ' && topicSub[1] == ':')
+                    {
+                        std::string topicSub2 = topicSub.substr(2, topicSub.size() - 2);
+                        std::cout << "***********TopicSub[" << topicSub2 <<"]" <<std::endl;
+                        Channels[str].topic = topicSub2;
+                    }
+                    else
+                        Channels[str].topic = topicSub.substr(1, topic.size() - 1);
+                    
+                    std::cout << "topic" << "[" << topicSub << "]"<< std::endl;
+                    std::cout << "2Topic:" << Channels[str].topic << "]"<< std::endl;
 
                     // Sending RPL_TOPIC to all users in the channel
                     std::ostringstream topicResponseAll;

@@ -167,11 +167,17 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                         std::string commentSub;
                         std::getline(ss, comment);
                         commentSub = comment.substr(0, comment.size() - 1);
-                        if (commentSub.empty())
+                        if (commentSub.empty() || (commentSub[1] == ':' && commentSub.size() == 2))
+                        {
                             comment = "No reason specified";
+                        }
                         else if (commentSub[0] == ' ')
-                            comment = commentSub.substr(1, comment.size() - 1);
-
+                        {
+                            if (commentSub[1] == ':')
+                                comment = commentSub.substr(2, comment.size() - 1);
+                            else
+                                comment = commentSub.substr(1, comment.size() - 1);
+                        }
                         // Notify the kicked user
                         std::ostringstream kickNotice;
                         kickNotice << ":" << Clients[fds[index].fd].nickNameGetter() << "!" << Clients[fds[index].fd].userNameGetter() << "@" << Clients[fds[index].fd].hostname << " KICK " << str << " " << targetUser << " :" << comment << "\r\n";

@@ -213,6 +213,7 @@ void Channel::mode(std::string input, int index)
 								//:mokhalil!mokha@example.com MODE #channel +i
 							}
                             operators[it->first] = it->second;
+                            opCount++;
                             k++;
                             break;
                         }
@@ -311,6 +312,7 @@ void Channel::mode(std::string input, int index)
 								send(IT->first,response.str().c_str(),response.str().size(), 0);
 								//:mokhalil!mokha@example.com MODE #channel +i
 							}
+                            opCount--;
                             k++;
                             break;
                         }
@@ -342,33 +344,72 @@ void Channel::mode(std::string input, int index)
  std::cout<<"bool invite "<<invite<<" keypass "<<password<<" bool key "<<keyPass<<" limits "<<limits<<std::endl;
 }
 
+int check_join_params(std::string params)
+{
+    size_t j;
+        j = 0;
+        while(j < params.size())
+        {
+            if (std::isspace(params[j]))
+                return (0);
+            j++;
+        }
+  
+    return(1);
+}
 
 void Channel::join(Client &client, int index, std::vector<std::string> params, size_t &paramsIndex) {
+     std::ostringstream joinError;
     if (invite == true) {
-        if (inviteClients.find(index) == inviteClients.end()) {
-            throw(std::invalid_argument("not invited\r\n"));
+        if (inviteClients.find(index) == inviteClients.end()) {     
+        joinError.clear();
+        //:irc.example.com 473 Alice #privatechat :Cannot join channel (+i)
+        joinError<<":WEBSERV 473 "<<client.nickNameGetter()<<" "<<name<<" :Cannot join channel (+i)\r\n";
+        send(index, joinError.str().c_str(), joinError.str().size(), 0);
+        return;
         }
     }
     if (limit == true) {
         if (limits == Clients.size()) {
-            throw(std::invalid_argument("limits \r\n"));
+            //:server_name 471 Bob #popular :Cannot join channel (+l)
+            joinError.clear();
+            joinError<<":WEBSERV 471 "<<client.nickNameGetter()<<" "<<name<<" :Cannot join channel (+l)\r\n";
+            send(index, joinError.str().c_str(), joinError.str().size(), 0);
+            return;
         }
     }
     if (keyPass == true) {
 		std::cout << "Index    -->"<<paramsIndex << std::endl;
         if (paramsIndex >= params.size()) {
-            throw(std::invalid_argument("invalid password\r\n"));
-        } else if (password.compare(params[paramsIndex])) {
-            throw(std::invalid_argument("invalid password\r\n"));
+            //:irc.example.com 696 Dave #example k very long and improper key with spaces :Invalid mode parameter
+           joinError.clear();
+           joinError<<":WEBSERV 696 "<<client.nickNameGetter()<<" "<<name<<" k undifined key :Invalid mode parameter\r\n";
+           send(index, joinError.str().c_str(), joinError.str().size(), 0);
+            return;
+        } 
+        else if (check_join_params(params[paramsIndex]))
+        {
+            joinError.clear();
+           joinError<<":WEBSERV 696 "<<client.nickNameGetter()<<" "<<name<<" k key with spaces :Invalid mode parameter\r\n";
+           send(index, joinError.str().c_str(), joinError.str().size(), 0);
+            return;    
+        }
+        else if (password.compare(params[paramsIndex])) {
+            joinError.clear();
+            joinError<<":WEBSERV 475 "<<client.nickNameGetter()<<" "<<name<<" :Cannot join channel (+k) - bad key\r\n";
+            send(index, joinError.str().c_str(), joinError.str().size(), 0);
+            return;
         }
 		std::cout<<"hada    -->"<<params[paramsIndex]<<std::endl;
     }
-    if (Clients.empty()) 
-	{
-        operators[index] = client;
-		opCount++;
-    }
-    if (Clients.find(index) == Clients.end()) {
+    
+    if (Clients.find(index) == Clients.end())
+    {
+        if (Clients.empty()) 
+	    {
+            operators[index] = client;
+	    	opCount++;
+        }
         Clients[index] = client;
 
         // Get and set the client's hostname

@@ -9,6 +9,7 @@ class Channel
 	private:
 
 	public:
+		// size_t count_param(std::vector<std::string>);
 		std::string topic;
         unsigned int limits;
 		bool restrictionsTOPIC;

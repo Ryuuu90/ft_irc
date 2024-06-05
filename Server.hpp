@@ -73,6 +73,7 @@ class Server
         std::string timeStr;
         Server();
     public:
+        size_t count_param(std::vector<std::string>);
         Server(int port, std::string password);
         ~Server();
         void serverSocket();

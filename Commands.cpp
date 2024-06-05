@@ -1,6 +1,23 @@
 #include "Channel.hpp"
 #include "Server.hpp"
 
+size_t Server::count_param(std::vector<std::string> chls)
+{
+    size_t i = 0;
+    size_t count = 0;;
+    while(i < chls.size())
+    {
+        if(Channels.find(chls[i]) != Channels.end())
+        {
+            if(Channels[chls[i]].keyPass)
+                count++;
+        }
+        i++;
+    }
+    return(count);
+    
+}
+
 void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
 {
     std::vector<std::string> vec;
@@ -17,6 +34,7 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
     ss >> str;
     if(str == "JOIN")
     {
+        std::ostringstream joinError;
         {
             std::vector<std::vector<std::string> > params;
             std::string params_str;
@@ -36,11 +54,14 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                 if(j == 1)
                     std::cout<<"params :"<<std::endl;
             }
-            if(params[0].empty())
+            if(params[0].empty() || params[0].size() < params[1].size() || count_param(params[0]) < params[1].size())
             {
-                send(fds[index].fd,"bad join input !! \r\n",21,0);
+                joinError.clear();
+                joinError<<":WEBSERV 461 "<<Clients[fds[index].fd].nickNameGetter()<<" JOIN :Not enough parameters\r\n";
+                send(fds[index].fd, joinError.str().c_str(), joinError.str().size(), 0);
                 return;
             }
+            
             else
             {
                 size_t i = 0;
@@ -400,7 +421,9 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
             {
                 if(Channels[str].Clients.find(fds[index].fd) == Channels[str].Clients.end())
                 {
-                    send(fds[index].fd,"You're not part of this channel\r\n",34,0);
+                     std::ostringstream response;
+                    response << ":WEBSERV 404 " << Channels[str].Clients[fds[index].fd].nickNameGetter() << " " << Channels[str].name << " :Cannot send to channel\r\n";
+                    send(fds[index].fd,response.str().c_str(), response.str().size(),0);
                     return;
                 }
                 std::string msg1;
@@ -459,7 +482,13 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                 
             }
             if(it8 == Clients.end())
-                send(fds[index].fd,"destinataire unknown!!\r\n",25,0);
+            {
+                std::ostringstream response;
+                response << ":WEBSERV 406 " << Clients[fds[index].fd].nickNameGetter() << " " << str << " :There was no such nickname\r\n";
+
+                // Send the response to the client
+                send(fds[index].fd, response.str().c_str(), response.str().size(), 0);
+            }
         }
     }
     else if (str == "JDM")

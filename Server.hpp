@@ -69,6 +69,7 @@ class Server
         std::map<int, Client> Clients;
         std::map<std::string, Channel> Channels;
         std::map<int, int> authenFlag;
+        std::map<int , std::string>ipaddresses;
         std::string timeStr;
         Server();
     public:

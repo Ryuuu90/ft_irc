@@ -164,7 +164,11 @@ void Server::NickCommand(int fd, std::vector<std::string> &vec)
                 std::cout<<"--> NICK "<<vec[1]<<std::endl;
                 std::cout<<"--> NICK "<<cli.nickNameGetter()<<std::endl;
                 Clients[fd] = cli;
-                Clients[npollfd.fd].IpAddressSetter(inet_ntoa(cliaddress.sin_addr));
+                std::cout<<"---->ip "<<ipaddresses[fd]<<std::endl;
+                Clients[fd].IpAddressSetter(ipaddresses[fd]);
+                Clients[fd].hostname = getClientHostname(Clients[fd].IpAddressGetter());
+                std::cout<<"---->ip a:"<<Clients[fd].IpAddressGetter()<<std::endl;
+                std::cout<<"---->hostname a:"<<Clients[fd].hostname<<std::endl;
                 std::cout << GREEN << "Nickname added successfully." << RESET << std::endl;
                 msg = "\033[1;32mRequesting the new nick " + Clients[fd].nickNameGetter() + "\r\n\033[0m";
                 send(fd, msg.c_str(), msg.size(), 0);
@@ -242,6 +246,7 @@ void Server::acceptClients()
     this->npollfd.revents = 0;
     this->authenFlag[npollfd.fd] = 0;
     fds.push_back(this->npollfd);
+    ipaddresses[npollfd.fd] = inet_ntoa(cliaddress.sin_addr);
     // Clients[npollfd.fd].IpAddressSetter(inet_ntoa(cliaddress.sin_addr));
     std::string msg = SERVER_NAME;
     send(npollfd.fd, msg.c_str(), msg.size(), 0);

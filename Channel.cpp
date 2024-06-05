@@ -90,19 +90,22 @@ void Channel::mode(std::string input, int index)
 	{
 		// :<server_name> 324 <nick> <channel> <modes> <parameters>
 		response<<":WEBSERV 324 "<<Clients[index].nickNameGetter()<<" ";
-		response<<this->name;
+		response<<this->name<<" ";
+        if (invite || limit || keyPass || restrictionsTOPIC || operators.find(index)!= operators.end())
+            response <<"+";
+        // else return;
 		if(invite)
-			response<<" +i";
-		if(limit)
-			response<<" +l "<<limits;
+			response<<"i";
 		if(keyPass)
-			response<<" +k";
+			response<<"k";
 		if(restrictionsTOPIC)
-			response <<" +t";
+			response <<"t";
 		if(operators.find(index)!= operators.end())
 		{
-			response<< " +o";
+			response<< "o";
 		}
+		if(limit)
+			response<<"l "<<limits;
 		response<<"\r\n";
 		// for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 		// {
@@ -110,13 +113,19 @@ void Channel::mode(std::string input, int index)
 			//:mokhalil!mokha@example.com MODE #channel +i
 		// }
 		// 
+        return;
 	}
     if(operators.find(index) == operators.end())
-        throw(std::invalid_argument("Not valid operator!!\r\n"));
+    {
+        response.clear();
+        // :<server> 482 <client> <channel> :You're not channel operator
+        response<<":WEBSERV 482"<<Clients[index].nickNameGetter()<<" ";
+        response<<this->name<<" :You're not channel operator\r\n";
+        send(index,response.str().c_str(),response.str().size(), 0);
+        return;
+    }
     std::vector<std::vector<std::string> > vect;
     vect = split_input(input,vect);
-    if(vect[0].empty())
-        throw(std::logic_error("VECTOR EMPTY\r\n"));
     size_t i = 0;
     while (i < vect.size())
     {
@@ -222,6 +231,7 @@ void Channel::mode(std::string input, int index)
 						digit >>limits;
 						if(digit.fail())
 							return;
+                        // if (limits <= 0);
                     	limit = true;
 						response.clear();
 						response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());

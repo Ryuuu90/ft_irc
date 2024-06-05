@@ -84,24 +84,36 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
     }
     else if(str == "MODE")
     {
+        std::stringstream sserr;
         ss>>str;
-        std::map<std::string, Channel>::iterator it2 = Channels.find(str);
-        if (it2 == Channels.end()){}
+        std::string channelName = str;
+        if (Clients[fds[index].fd].nickNameGetter() == channelName)
+        {
+            ss>>str;
+            if(str == "+i")
+                return;
+            else
+            {
+                sserr<<":WEBSERV 403 "<<Clients[fds[index].fd].nickNameGetter() << " " << channelName << " :No such channel\r\n";
+                send(fds[index].fd, sserr.str().c_str(),sserr.str().size(),0);
+                return;
+            }
+        }
         else
         {
-            std::string channelName = str;
-            try
+            if(Channels.find(channelName) == Channels.end())
             {
-                if(Channels.find(channelName) == Channels.end())
-                    throw(std::invalid_argument(Clients[fds[index].fd].nickNameGetter() + " " + channelName + " :No such channel\r\n"));
+                // :<server> 403 <nickname> <channel> :No such channel
+                sserr<<":WEBSERV 403 "<<Clients[fds[index].fd].nickNameGetter() << " " << channelName << " :No such channel\r\n";
+                send(fds[index].fd, sserr.str().c_str(),sserr.str().size(),0);
+                return;
             }
-            catch(std::invalid_argument &e)
-            {
-                std::stringstream sserr;
-                sserr << ERR_NOSUCHCHANNEL<<" "<< e.what();
-                std::string errmsg = sserr.str();
-                send(fds[index].fd, errmsg.c_str(),errmsg.size(),0);
-            }
+            // {
+            //     sserr.clear();
+            //     sserr << ERR_NOSUCHCHANNEL<<" "<< e.what();
+            //     std::string errmsg = sserr.str();
+            //     send(fds[index].fd, errmsg.c_str(),errmsg.size(),0);
+            // }
             std::string input;
             std::getline(ss,input);
             input.erase(input.end()-1);
@@ -264,13 +276,13 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                     std::cout << "Updated Topic: [" << Channels[str].topic << "]" << std::endl;
 
                     // Sending TOPIC change notification to all users in the channel
-                    std::cout << "...........host/"<< Clients[index].hostname<<"/............." << std::endl;
+                    std::cout << "...........host/"<< Server::Clients[fds[index].fd].hostname<<"/............." << std::endl;
                     std::ostringstream topicResponseAll;
                     //get hostname
-                    // Clients[index].hostname = getClientHostname(Clients[index].IpAddressGetter());
-                        std::cout << "ip/"<< Clients[index].IpAddressGetter() << std::endl;
+                    // Clients[fds[index].fd].hostname = getClientHostname(Clients[fds[index].fd].IpAddressGetter());
+                        std::cout << "ip/"<< Server::Clients[fds[index].fd].IpAddressGetter() << std::endl;
 
-                    topicResponseAll << ":" << Clients[index].nickNameGetter() << "!" << Clients[index].userNameGetter() << "@" << Clients[index].hostname << " TOPIC " << str << " :" << Channels[str].topic << "\r\n";
+                    topicResponseAll << ":" << Clients[fds[index].fd].nickNameGetter() << "!" << Clients[fds[index].fd].userNameGetter() << "@" << Server::Clients[fds[index].fd].hostname << " TOPIC " << str << " :" << Channels[str].topic << "\r\n";
                     for (std::map<int, Client>::iterator it = Channels[str].Clients.begin(); it != Channels[str].Clients.end(); ++it)
                     {
                         send(it->first, topicResponseAll.str().c_str(), topicResponseAll.str().size(), 0);
@@ -278,7 +290,7 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
 
                     // Sending RPL_TOPIC (332) to the user who changed the topic
                     std::ostringstream topicResponse;
-                    topicResponse << ":WEBSERV 332 " << Clients[index].nickNameGetter() << " " << str << " :" << Channels[str].topic << "\r\n";
+                    topicResponse << ":WEBSERV 332 " << Clients[fds[index].fd].nickNameGetter() << " " << str << " :" << Channels[str].topic << "\r\n";
                     send(fds[index].fd, topicResponse.str().c_str(), topicResponse.str().size(), 0);
 
                     return;

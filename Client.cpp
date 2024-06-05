@@ -2,7 +2,6 @@
 
 Client::Client()
 {
-    this->hostname = getClientHostname(this->IpAddress);
 }
 
 Client::~Client()

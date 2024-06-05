@@ -174,12 +174,12 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
 
                         // Notify the kicked user
                         std::ostringstream kickNotice;
-                        kickNotice << ":" << Clients[fds[index].fd].nickNameGetter() << "!host KICK " << str << " " << targetUser << " :" << comment << "\r\n";
+                        kickNotice << ":" << Clients[fds[index].fd].nickNameGetter() << "!" << Clients[fds[index].fd].userNameGetter() << "@" << Clients[fds[index].fd].hostname << " KICK " << str << " " << targetUser << " :" << comment << "\r\n";
                         send(itClient->first, kickNotice.str().c_str(), kickNotice.str().size(), 0);
 
                         // Notify the channel about the kicked user
                         std::ostringstream channelNotice;
-                        channelNotice << ":" << Clients[fds[index].fd].nickNameGetter() << "!host KICK " << str << " " << targetUser << " :" << comment << "\r\n";
+                        channelNotice << ":" << Clients[fds[index].fd].nickNameGetter() << "!" << Clients[fds[index].fd].userNameGetter() << "@" << Clients[fds[index].fd].hostname << " KICK " << str << " " << targetUser << " :" << comment << "\r\n";
                         std::map<int, Client>::iterator itNotify;
                         for (itNotify = Channels[str].Clients.begin(); itNotify != Channels[str].Clients.end(); ++itNotify)
                         {
@@ -187,14 +187,6 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                         }
 
                         Channels[str].Clients.erase(itClient);
-
-                        // If the kicked user is also the one issuing the kick command (self-kick)
-                        if (itClient->first == fds[index].fd)
-                        {
-                            std::ostringstream selfKickResponse;
-                            selfKickResponse << ":WEBSERV 485 " << Clients[fds[index].fd].nickNameGetter() << " :You have kicked yourself\r\n";
-                            send(fds[index].fd, selfKickResponse.str().c_str(), selfKickResponse.str().size(), 0);
-                        }
                         break;
                     }
                 }

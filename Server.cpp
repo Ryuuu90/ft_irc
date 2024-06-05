@@ -58,7 +58,7 @@ void Server::serverSocket()
 void Server::msgToClient(int fd, std::string msg, int errorNum)
 {
     std::stringstream ss;
-    ss <<":WEBSERV "<< errorNum << " " << fd <<  msg;
+    ss <<":WEBSERV "<< errorNum << " " << fd << msg;
     msg = ss.str();
     send(fd, msg.c_str(), msg.size(), 0);
 }
@@ -104,24 +104,21 @@ void Server::UserCommand(int fd, std::vector<std::string> &vec)
         send(fd, msg.c_str(), msg.size(), 0);
     }
     if(vec[0] == "USER" && vec.size() < 5)
-        ParamMsgClient(fd, vec[0], " :Not enough parameters\r\n", 461);
+        return ParamMsgClient(fd, vec[0], " :Not enough parameters\r\n", 461);
     if(vec[0] == "USER" && vec.size() > 6)
-        ParamMsgClient(fd, vec[0], " :Too much parameters\r\n", 0);
+        return ParamMsgClient(fd, vec[0], " :Too much parameters\r\n", 0);
     if(vec[0] == "USER" && (vec.size() == 5 || vec.size() == 6))
     {
         if(vec[2] != "0" || vec[3] != "*")
-            ParamMsgClient(fd, vec[0], " :The third paramter should be '0' and the fourth parameter should be '*'.\r\n", 0);
+            return ParamMsgClient(fd, vec[0], " :The third paramter should be '0' and the fourth parameter should be '*'.\r\n", 0);
         else if(vec[4][0] != ':')
-            ParamMsgClient(fd, vec[0], " :The real should prefixed with a colon(:).\r\n", 0);
+            return ParamMsgClient(fd, vec[0], " :The real should prefixed with a colon(:).\r\n", 0);
         else
         {
             Clients[fd].userNameSetter(vec[1]);
             vec[4].erase(vec[4].begin());
             if(vec[4].empty())
-            {
-                ParamMsgClient(fd, vec[0], " :Enter your realname.\r\n", 0);
-                return;
-            }
+                return ParamMsgClient(fd, vec[0], " :Enter your realname.\r\n", 0);
             else if(vec.size() == 5)
                 Clients[fd].realNameSetter(vec[4]);
             else
@@ -144,19 +141,17 @@ void Server::NickCommand(int fd, std::vector<std::string> &vec)
         send(fd, msg.c_str(), msg.size(), 0);
     }
     if(vec[0] == "NICK" && vec.size() == 1)
-        msgToClient(fd, " :\033[1;31mNo nickname given\033[0m\r\n", 431);
+        return msgToClient(fd, " :\033[1;31mNo nickname given\033[0m\r\n", 431);
     if(vec[0] == "NICK" && vec.size() > 2)
-        ParamMsgClient(fd, vec[0], " :Too much parameters\r\n", 0);
+        return ParamMsgClient(fd, vec[0], " :Too much parameters\r\n", 0);
     if(vec[0] == "NICK" && vec.size() == 2)
     {
         if(NickNameInUse(vec[1], fd))
-        {
-            ParamMsgClient(fd, vec[1], " :Nickname is already in use.\033[0m\r\n", 433);
-        }
+            return ParamMsgClient(fd, vec[1], " :Nickname is already in use.\033[0m\r\n", 433);
         else
         {
             if(!checkNickName(vec[1]))
-                ParamMsgClient(fd, vec[1], " :Erroneus nickname.\033[0m\r\n", 432);
+                return ParamMsgClient(fd, vec[1], " :Erroneus nickname.\033[0m\r\n", 432);
             else
             {
                 this->authenFlag[fd]++;
@@ -191,7 +186,7 @@ void Server::PassCommand(int fd, std::vector<std::string> &vec)
         send(fd, msg.c_str(), msg.size(), 0);
     }
     if(vec.size() != 2 && vec[0] == "PASS")
-        ParamMsgClient(fd, vec[0], " :Not enough parameters\033[0m\r\n", 461);
+        return ParamMsgClient(fd, vec[0], " :Not enough parameters\033[0m\r\n", 461);
     if(vec.size() == 2 && vec[0] == "PASS")
     {
         std::cout << YELLOW << "'" << fd << "'" << RESET << std::endl;
@@ -201,7 +196,7 @@ void Server::PassCommand(int fd, std::vector<std::string> &vec)
             std::cout << GREEN2 << "Client (" << fd << ") Connected." << RESET << std::endl;
         }
         else
-            msgToClient(fd, " :\033[1;31mPassword incorrect\033[0m\r\n", 464);
+            return msgToClient(fd, " :\033[1;31mPassword incorrect\033[0m\r\n", 464);
     }
     if(this->authenFlag[fd] == 1)
     {
@@ -373,7 +368,7 @@ void Server::receiveData(int index)
             send(fds[index].fd, msg.c_str(), msg.size(), 0);
             this->authenFlag[fds[index].fd]++;
         }
-        if(this->authenFlag[fds[index].fd] == 4)
-            commands(msg,fds, index);    
+        if(this->authenFlag[fds[index].fd] >= 4)
+            commands(msg,fds, index);
     }
 }

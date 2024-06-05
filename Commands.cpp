@@ -23,7 +23,8 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
     std::vector<std::string> vec;
     std::stringstream ss2(buff);
     std::stringstream ss(buff);
-    std::string str; 
+    std::string str;
+    std::string str2; 
     getline(ss2, str);
     if (str.find("PING") != std::string::npos)
     {
@@ -32,6 +33,13 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
         send(fds[index].fd, msg.c_str(), msg.size(), 0);
     }
     ss >> str;
+    if(str == "USER" && this->authenFlag[fds[index].fd] == 4)
+    {    
+        this->authenFlag[fds[index].fd]++;
+        return;
+    }
+    if(str == "PASS" || (str == "USER" && this->authenFlag[fds[index].fd] > 4))
+        return msgToClient(fds[index].fd, " :\033[1;31mYou may not reregister\033[0m\r\n", 462);
     if(str == "JOIN")
     {
         std::ostringstream joinError;

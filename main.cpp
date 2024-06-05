@@ -21,6 +21,8 @@ int main(int ac, char **av)
             throw (std::runtime_error("Error: The port is a number."));
         int port = std::atoi(av[1]);
         std::string password = av[2];
+        if(password.find(' ') != std::string::npos || password.find('\t') != std::string::npos)
+            throw (std::runtime_error("Error: The password should not contain spaces."));
         Server server(port, password);
     }
     catch (std::exception &e)

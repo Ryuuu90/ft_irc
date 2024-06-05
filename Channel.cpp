@@ -395,21 +395,37 @@ void Channel::join(Client &client, int index, std::vector<std::string> params, s
 		// Kayn chi concept hnaya message ki trprinta check top dial terminal f blasst topic
         std::ostringstream namesResponse;
         namesResponse << ":WEBSERV 353 " << client.nickNameGetter() << " = " << this->name << " :";
-        for (it = Clients.begin(); it != Clients.end(); ++it) {
-            if (operators.find(it->first) != operators.end())
-                namesResponse<<"@";
-            namesResponse << it->second.nickNameGetter() << " ";
+        std::map<int,Client>::iterator next;
+        for (it = Clients.begin(); it != Clients.end(); ++it)
+        {
+            if (operators.find(it->first) != operators.end()) {
+                namesResponse << "@" << it->second.nickNameGetter();
+            } else {
+                namesResponse << it->second.nickNameGetter();
+            }
+            next = it;
+            next++;
+            if (next != Clients.end()) {
+                namesResponse << " ";
+            }
+            // if (operators.find(it->first) != operators.end())
+            //     namesResponse<<"@";
+            // namesResponse << it->second.nickNameGetter();
+            // next = it;
+            // next++;
+            // if (next != Clients.end())
+            //     namesResponse <<" ";
         }
         namesResponse << "\r\n";
 
         // RPL_ENDOFNAMES (366) - End of the list of users
         std::ostringstream endNamesResponse;
         endNamesResponse << ":WEBSERV 366 " << client.nickNameGetter() << " " << this->name << " :End of /NAMES list\r\n";
-        for (it = Clients.begin(); it != Clients.end(); ++it)
-        {
-            send(it->first, namesResponse.str().c_str(), namesResponse.str().size(), 0);
-            send(it->first, endNamesResponse.str().c_str(), endNamesResponse.str().size(), 0);
-        }
+        // for (it = Clients.begin(); it != Clients.end(); ++it)
+        // {
+            send(index, namesResponse.str().c_str(), namesResponse.str().size(), 0);
+            send(index, endNamesResponse.str().c_str(), endNamesResponse.str().size(), 0);
+        // }
 
 		// If the client is an operator, send the mode change notification
         if (operators.find(index) != operators.end()) {

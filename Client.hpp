@@ -26,5 +26,6 @@ class Client
         virtual ~Client();
 
 };
+std::string getClientHostname(const std::string& ipAddress);
 
 #endif

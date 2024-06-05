@@ -79,25 +79,7 @@ std::vector<std::vector<std::string> > &split_input(std::string input ,std::vect
     return(vect);
 }
 
-#include <netdb.h>
-#include <arpa/inet.h>
 
-std::string getClientHostname(const std::string& ipAddress) {
-    struct sockaddr_in sa;
-    char host[1024];
-    char service[20];
-
-    sa.sin_family = AF_INET;
-    inet_pton(AF_INET, ipAddress.c_str(), &sa.sin_addr);
-
-    int result = getnameinfo((struct sockaddr*)&sa, sizeof(sa), host, sizeof(host), service, sizeof(service), 0);
-    if (result != 0) {
-        std::cerr << "Error getting client hostname: " << gai_strerror(result) << std::endl;
-        return ipAddress; // Fallback to IP address if hostname cannot be resolved
-    }
-
-    return std::string(host);
-}
 
 void Channel::mode(std::string input, int index)
 {
@@ -380,7 +362,7 @@ void Channel::join(Client &client, int index, std::vector<std::string> params, s
         Clients[index] = client;
 
         // Get and set the client's hostname
-        client.hostname = getClientHostname(client.IpAddressGetter());
+        // client.hostname = getClientHostname(client.IpAddressGetter());
 
         // Notify all users in the channel about the new join
         std::ostringstream joinNotif;

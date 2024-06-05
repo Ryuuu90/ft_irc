@@ -80,6 +80,8 @@ bool Server::NickNameInUse(std::string nName, int fd)
     }
     return false;
 }
+
+
 bool Server::checkNickName(std::string nName)
 {
     if (std::isdigit(nName[0]) || nName[0] == '#' || nName[0] == '&' || nName[0] == ':')
@@ -162,6 +164,7 @@ void Server::NickCommand(int fd, std::vector<std::string> &vec)
                 std::cout<<"--> NICK "<<vec[1]<<std::endl;
                 std::cout<<"--> NICK "<<cli.nickNameGetter()<<std::endl;
                 Clients[fd] = cli;
+                Clients[npollfd.fd].IpAddressSetter(inet_ntoa(cliaddress.sin_addr));
                 std::cout << GREEN << "Nickname added successfully." << RESET << std::endl;
                 msg = "\033[1;32mRequesting the new nick " + Clients[fd].nickNameGetter() + "\r\n\033[0m";
                 send(fd, msg.c_str(), msg.size(), 0);

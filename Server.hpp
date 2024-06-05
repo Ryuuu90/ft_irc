@@ -18,6 +18,8 @@
 #include <unistd.h>
 #include <map>
 #include <sstream>
+#include <netdb.h>
+#include <arpa/inet.h>
 #include "Channel.hpp"
  
 #define SERVER_NAME "\033[1;36m                                                                                          \n" \

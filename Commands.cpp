@@ -207,6 +207,7 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                             else
                                 comment = commentSub.substr(1, comment.size() - 1);
                         }
+
                         // Notify the kicked user
                         std::ostringstream kickNotice;
                         kickNotice << ":" << Clients[fds[index].fd].nickNameGetter() << "!" << Clients[fds[index].fd].userNameGetter() << "@" << Clients[fds[index].fd].hostname << " KICK " << str << " " << targetUser << " :" << comment << "\r\n";
@@ -221,7 +222,20 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                             send(itNotify->first, channelNotice.str().c_str(), channelNotice.str().size(), 0);
                         }
 
+                        // Remove the user from the channel's Clients map
                         Channels[str].Clients.erase(itClient);
+
+                        // Remove the user from the channel's operators map
+                        std::map<int, Client>::iterator itOperator = Channels[str].operators.find(itClient->first);
+                        if (itOperator != Channels[str].operators.end())
+                            Channels[str].operators.erase(itOperator);
+
+                        //Remove the user from the inviteClients map
+                        std::map<int, Client>::iterator itInvite = Channels[str].inviteClients.find(itClient->first);
+                        if (itInvite != Channels[str].inviteClients.end())
+                            Channels[str].inviteClients.erase(itInvite);
+                        
+
                         break;
                     }
                 }
@@ -528,5 +542,46 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
             std::string msg = "\033[0;35mJDMbot:\033[0;36m " + fact + "\033[0m\r\n";
             send(fds[index].fd, msg.c_str(), msg.size(), 0);
         }
+    }
+    else if (str == "QUIT")
+    {
+        std::string msg;
+        std::getline(ss, msg);
+
+        if (!msg.empty() && msg[msg.size() - 1] == '\r')
+            msg.erase(msg.end() - 1);
+        if (msg.empty())
+            msg = "Leaving";
+
+        std::ostringstream response;
+        response << ":" << Clients[fds[index].fd].nickNameGetter() 
+                << "!" << Clients[fds[index].fd].userNameGetter() 
+                << "@" << Clients[fds[index].fd].hostname
+                << " QUIT :" << msg << "\r\n";
+
+        for (std::map<int, Client>::iterator it = Clients.begin(); it != Clients.end(); ++it)
+        {
+            if (it->first != fds[index].fd)
+            {
+                send(it->first, response.str().c_str(), response.str().size(), 0);
+            }
+        }
+
+        std::map<std::string, Channel>::iterator it;
+        for (it = Channels.begin(); it != Channels.end(); ++it)
+        {
+            if (it->second.Clients.find(fds[index].fd) != it->second.Clients.end())
+            {
+                it->second.Clients.erase(fds[index].fd);
+                if (it->second.operators.find(fds[index].fd) != it->second.operators.end())
+                    it->second.operators.erase(fds[index].fd);
+                if (it->second.inviteClients.find(fds[index].fd) != it->second.inviteClients.end())
+                    it->second.inviteClients.erase(fds[index].fd);
+            }
+        }
+
+        close(fds[index].fd);
+        Clients.erase(fds[index].fd);
+        fds.erase(fds.begin() + index);
     }
 }

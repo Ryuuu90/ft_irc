@@ -27,7 +27,6 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
     getline(ss2, str);
     if (str.find("PING") != std::string::npos)
     {
-        std::cout << YELLOW << "here" << RESET << std::endl; 
         msg = "PONG\r\n";
         send(fds[index].fd, msg.c_str(), msg.size(), 0);
     }
@@ -64,9 +63,7 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                 {
                     std::map<std::string, Channel>::iterator it = Channels.find(params[0][i]);
                     if(it == Channels.end())
-                    {
-                        std::cout<<""<<std::endl;
-            
+                    {            
                             if(params[0][i].size() < 2)
                             {
                                 joinError.clear();
@@ -112,7 +109,7 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
     {
         std::stringstream sserr;
         ss>>str;
-        std::string channelName = str;
+        std::string channelName = str;  
         if (Clients[fds[index].fd].nickNameGetter() == channelName)
         {
             ss>>str;
@@ -270,7 +267,6 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                 std::string topic;
                 std::getline(ss, topic);
                 std::string topicSub = topic.substr(0, topic.size() - 1);
-                std::cout << "sub[" << topicSub << "]" << std::endl;
 
                 if (topicSub.empty() && Channels[str].topic.empty())
                 {
@@ -280,14 +276,12 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                 }
                 else if (topicSub.empty())
                 {
-                    std::cout << "Topic: [" << Channels[str].topic << "]" << std::endl;
                     std::string msg = ":WEBSERV 332 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :" + Channels[str].topic + "\r\n";
                     send(fds[index].fd, msg.c_str(), msg.size(), 0);
                     return;
                 }
                 else
                 {
-                    std::cout << "--->TopicSub[" << topicSub << "]" << std::endl;
                     if (topicSub[0] == ' ' && topicSub[1] == ':')
                     {
                         Channels[str].topic = topicSub.substr(2);
@@ -297,14 +291,9 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                         Channels[str].topic = topicSub.substr(1);
                     }
 
-                    std::cout << "Updated Topic: [" << Channels[str].topic << "]" << std::endl;
 
                     // Sending TOPIC change notification to all users in the channel
-                    std::cout << "...........host/"<< Server::Clients[fds[index].fd].hostname<<"/............." << std::endl;
                     std::ostringstream topicResponseAll;
-                    //get hostname
-                    // Clients[fds[index].fd].hostname = getClientHostname(Clients[fds[index].fd].IpAddressGetter());
-                        std::cout << "ip/"<< Server::Clients[fds[index].fd].IpAddressGetter() << std::endl;
 
                     topicResponseAll << ":" << Clients[fds[index].fd].nickNameGetter() << "!" << Clients[fds[index].fd].userNameGetter() << "@" << Server::Clients[fds[index].fd].hostname << " TOPIC " << str << " :" << Channels[str].topic << "\r\n";
                     for (std::map<int, Client>::iterator it = Channels[str].Clients.begin(); it != Channels[str].Clients.end(); ++it)
@@ -368,6 +357,14 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                     if (it->second.nickNameGetter() == str)
                         return;
                 }
+
+                std::map<int, Client>::iterator it2;
+                for (it2 = Channels[targetChannel].Clients.begin(); it2 != Channels[targetChannel].Clients.end(); it2++)
+                {
+                    if (it2->second.nickNameGetter() == str)
+                        return;
+                }
+
                 std::map<int, Client>::iterator itClient;
                 bool userFound = false;
                 for (itClient = Clients.begin(); itClient != Clients.end(); itClient++)
@@ -387,11 +384,6 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                         confirmInvite << ":WEBSERV 341 " << Clients[fds[index].fd].nickNameGetter() << " " << str << " " << targetChannel << "\r\n";
                         send(fds[index].fd, confirmInvite.str().c_str(), confirmInvite.str().size(), 0);
 
-                        std::map<int, Client>::iterator it;
-                        for (it = Channels[targetChannel].inviteClients.begin(); it != Channels[targetChannel].inviteClients.end(); it++)
-                        {
-                            std::cout << it->first << "*-*-* " << it->second.nickNameGetter() << std::endl;
-                        }
                         return;
                     }
                 }
@@ -458,7 +450,6 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
             std::map<int ,Client>::iterator it8;
             for(it8 = Clients.begin(); it8 != Clients.end(); it8++)
             {
-                std::cout<<it8->second.nickNameGetter()<<" ";
                 if (!it8->second.nickNameGetter().compare(str))
                 {
                     std::string recipient = str;
@@ -485,8 +476,6 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
             {
                 std::ostringstream response;
                 response << ":WEBSERV 406 " << Clients[fds[index].fd].nickNameGetter() << " " << str << " :There was no such nickname\r\n";
-
-                // Send the response to the client
                 send(fds[index].fd, response.str().c_str(), response.str().size(), 0);
             }
         }

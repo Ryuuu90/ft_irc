@@ -130,26 +130,27 @@ void Channel::mode(std::string input, int index)
             {
                 if(vect[0][i][j] == 'i')
                 {
+                    std::cout<<vect[0][i][j]<<std::endl;
 					invite = true;
-					response.clear();
+					std::ostringstream response;
 					response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
     				response<<" MODE "<<this->name;
 					response<<" +i"<<"\r\n";
 					for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 					{
-						send(IT->first,response.str().c_str(),response.str().size(), 0);
+                        send(IT->first,response.str().c_str(),response.str().size(), 0);
 					}
                 }
                 else if(vect[0][i][j] == 't')
 				{
 					restrictionsTOPIC = true;
-					response.clear();
+					std::ostringstream response;
 					response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
     				response<<" MODE "<<this->name;
 					response<<" +t"<<"\r\n";
 					for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 					{
-						send(IT->first,response.str().c_str(),response.str().size(), 0);
+                        send(IT->first,response.str().c_str(),response.str().size(), 0);
 					}
 				}
                 else if(vect[0][i][j] == 'k')
@@ -158,19 +159,19 @@ void Channel::mode(std::string input, int index)
                     {
                         password = vect[1][k];
                     	keyPass = true;
-						response.clear();
+						std::ostringstream response;
 						response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
     					response<<" MODE "<<this->name;
 						response<<" +k "<<"\r\n";
 						for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 						{
-							send(IT->first,response.str().c_str(),response.str().size(), 0);
+                            send(IT->first,response.str().c_str(),response.str().size(), 0);
 						}
                         k++;
                     }
 					else
 					{
-						response.clear();
+						std::ostringstream response;
 						response<<":WEBSERV 696 "<<Clients[index].nickNameGetter()<<" "<<name<<" k undifined key :Invalid mode parameter\r\n";
 						send(index,response.str().c_str(),response.str().size(), 0);
 						return;
@@ -183,13 +184,13 @@ void Channel::mode(std::string input, int index)
                     {
                         if (k < vect[1].size() && (it->second.nickNameGetter() == vect[1][k]))
                         {
-							response.clear();
+							std::ostringstream response;
 							response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
     						response<<" MODE "<<this->name;
 							response<<" +o "<<it->second.nickNameGetter()<<"\r\n";
 							for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 							{
-								send(IT->first,response.str().c_str(),response.str().size(), 0);
+                               send(IT->first,response.str().c_str(),response.str().size(), 0);
 							}
                             operators[it->first] = it->second;
                             opCount++;
@@ -199,7 +200,7 @@ void Channel::mode(std::string input, int index)
                     }
                     if (it == Clients.end())
 					{
-						response.clear();
+						std::ostringstream response;
 						response<<":WEBSERV 696 "<<Clients[index].nickNameGetter()<<" "<<name<<" o undifined user :Invalid mode parameter\r\n";
 						send(index,response.str().c_str(),response.str().size(), 0);
 						return;
@@ -214,25 +215,25 @@ void Channel::mode(std::string input, int index)
 						digit >>limits;
                         if (limits <= 0 || digit.fail())
                         {
-						    response.clear();
+						    std::ostringstream response;
 						    response<<":WEBSERV 696 "<<Clients[index].nickNameGetter()<<" "<<name<<" l bad limit :Invalid mode parameter\r\n";
 						    send(index,response.str().c_str(),response.str().size(), 0);
 						    return;
 					    }
                     	limit = true;
-						response.clear();
+						std::ostringstream response;
 						response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
     					response<<" MODE "<<this->name;
 						response<<" +l "<<limits<<"\r\n";
 						for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 						{
-							send(IT->first,response.str().c_str(),response.str().size(), 0);
+                            send(IT->first,response.str().c_str(),response.str().size(), 0);
 						}
                         k++;
                     }
                     else
                     {
-						response.clear();
+						std::ostringstream response;
 						response<<":WEBSERV 696 "<<Clients[index].nickNameGetter()<<" "<<name<<" l undifined limit :Invalid mode parameter\r\n";
 						send(index,response.str().c_str(),response.str().size(), 0);
 						return;
@@ -249,38 +250,38 @@ void Channel::mode(std::string input, int index)
                 if(vect[0][i][j] == 'i')
 				{
 					invite = false;
-					response.clear();
+					std::ostringstream response;
 					response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
     				response<<" MODE "<<this->name;
 					response<<" -i"<<"\r\n";
 					for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 					{
-						send(IT->first,response.str().c_str(),response.str().size(), 0);
+                        send(IT->first,response.str().c_str(),response.str().size(), 0);
 					}
 				}
                 else if(vect[0][i][j] == 't')
 				{
-					response.clear();
+					std::ostringstream response;
 					response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
     				response<<" MODE "<<this->name;
 					response<<" -t"<<"\r\n";
 					restrictionsTOPIC = false;
 					for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 					{
-						send(IT->first,response.str().c_str(),response.str().size(), 0);
+                        send(IT->first,response.str().c_str(),response.str().size(), 0);
 					}
 				}
                 else if(vect[0][i][j] == 'k')
                 {
                     keyPass = false;
                     password = "";
-                    response.clear();
+                    std::ostringstream response;
 					response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
     				response<<" MODE "<<this->name;
 					response<<" -k"<<"\r\n";
 					for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 					{
-						send(IT->first,response.str().c_str(),response.str().size(), 0);
+                        send(IT->first,response.str().c_str(),response.str().size(), 0);
 					}
                 }
                 else if(vect[0][i][j] == 'o')
@@ -291,13 +292,13 @@ void Channel::mode(std::string input, int index)
                         if (k < vect[1].size() && (it->second.nickNameGetter() == vect[1][k]) && operators.size() > 1)
                         {
                             operators.erase(it);
-							response.clear();
+							std::ostringstream response;
 							response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
     						response<<" MODE "<<this->name;
 							response<<" -o "<<it->second.nickNameGetter()<<"\r\n";
 							for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 							{
-								send(IT->first,response.str().c_str(),response.str().size(), 0);
+                                send(IT->first,response.str().c_str(),response.str().size(), 0);
 							}
                             opCount--;
                             k++;
@@ -306,7 +307,7 @@ void Channel::mode(std::string input, int index)
                     }
                     if (it == Clients.end())
                     {
-						response.clear();
+						std::ostringstream response;
 						response<<":WEBSERV 696 "<<Clients[index].nickNameGetter()<<" "<<name<<" o undifined user :Invalid mode parameter\r\n";
 						send(index,response.str().c_str(),response.str().size(), 0);
 						return;
@@ -316,13 +317,13 @@ void Channel::mode(std::string input, int index)
                 {
                     limit = false;
                     limits = -1;
-					response.clear();
+					std::ostringstream response;
 					response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
     				response<<" MODE "<<this->name;
 					response<<" -l"<<"\r\n";
 					for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 					{
-						send(IT->first,response.str().c_str(),response.str().size(), 0);
+                        send(IT->first,response.str().c_str(),response.str().size(), 0);
 					}
                 }
                 j++;

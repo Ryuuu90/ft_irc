@@ -156,14 +156,9 @@ void Server::NickCommand(int fd, std::vector<std::string> &vec)
             {
                 this->authenFlag[fd]++;
                 cli.nickNameSetter(vec[1]);
-                std::cout<<"--> NICK "<<vec[1]<<std::endl;
-                std::cout<<"--> NICK "<<cli.nickNameGetter()<<std::endl;
                 Clients[fd] = cli;
-                std::cout<<"---->ip "<<ipaddresses[fd]<<std::endl;
                 Clients[fd].IpAddressSetter(ipaddresses[fd]);
                 Clients[fd].hostname = getClientHostname(Clients[fd].IpAddressGetter());
-                std::cout<<"---->ip a:"<<Clients[fd].IpAddressGetter()<<std::endl;
-                std::cout<<"---->hostname a:"<<Clients[fd].hostname<<std::endl;
                 std::cout << GREEN << "Nickname added successfully." << RESET << std::endl;
                 msg = "\033[1;32mRequesting the new nick " + Clients[fd].nickNameGetter() + "\r\n\033[0m";
                 send(fd, msg.c_str(), msg.size(), 0);
@@ -189,7 +184,6 @@ void Server::PassCommand(int fd, std::vector<std::string> &vec)
         return ParamMsgClient(fd, vec[0], " :Not enough parameters\033[0m\r\n", 461);
     if(vec.size() == 2 && vec[0] == "PASS")
     {
-        std::cout << YELLOW << "'" << fd << "'" << RESET << std::endl;
         if(vec[1] == this->password)
         {
             this->authenFlag[fd]++;
@@ -242,7 +236,7 @@ void Server::acceptClients()
     this->authenFlag[npollfd.fd] = 0;
     fds.push_back(this->npollfd);
     ipaddresses[npollfd.fd] = inet_ntoa(cliaddress.sin_addr);
-    // Clients[npollfd.fd].IpAddressSetter(inet_ntoa(cliaddress.sin_addr));
+
     std::string msg = SERVER_NAME;
     send(npollfd.fd, msg.c_str(), msg.size(), 0);
     msg = "\033[1;35mPlease enter your password :\033[0m\r\n";
@@ -255,13 +249,11 @@ std::vector<std::vector<std::string> > &split_Channels(std::string input, std::v
     std::vector<std::string>channelsKeys;
     vect.push_back(channels);
     vect.push_back(channelsKeys);
-	std::cout<<"before while "<<input<<std::endl;
     std::stringstream ss(input);
     int k =0;
     int l = 0;
     while(ss>>input)
     {
-		std::cout<<"input to push "<<input<<std::endl;
         if(input[0] == '#')
         {
             if (input.find(',') != std::string::npos)
@@ -279,12 +271,10 @@ std::vector<std::vector<std::string> > &split_Channels(std::string input, std::v
                     i++;
                 }
                 channel = input.substr(k,i);
-				std::cout<<"push back in channels name "<<input<<std::endl;
                 vect[0].push_back(channel);
             }
             else
-                {vect[0].push_back(input);
-				std::cout<<"push back in channels name "<<input<<std::endl;}
+                {vect[0].push_back(input);}
         }
         else
         {
@@ -303,12 +293,10 @@ std::vector<std::vector<std::string> > &split_Channels(std::string input, std::v
                     i++;
                 }
                 key = input.substr(l,i);
-				std::cout<<"push back in keys "<<input<<std::endl;
                 vect[1].push_back(key);
             }
             else
-                {vect[1].push_back(input);
-				std::cout<<"push back in channels name "<<input<<std::endl;}
+                {vect[1].push_back(input);}
 		}
     }
     return(vect);
@@ -316,7 +304,6 @@ std::vector<std::vector<std::string> > &split_Channels(std::string input, std::v
 
 bool Server::checkControlD(int rec)
 {
-    std::cout << RED << buff << RESET << std::endl;
     if(rec > 0 && this->buff[rec - 1] != '\n')
     {
         this->joinFlag = 1;
@@ -331,8 +318,6 @@ bool Server::checkControlD(int rec)
     else
         this->join = buff;
     return false;
-    // if(this->buff[rec - 1] == '\n')
-    // return true;
 }
 void Server::receiveData(int index)
 {
@@ -352,7 +337,6 @@ void Server::receiveData(int index)
         this->buff[rec] = '\0';
         if(checkControlD(rec))
             return;
-        std::cout << this->join << std::endl;
         if(this->authenFlag[fds[index].fd] < 3)
             authentication(this->join, index);
         if(this->authenFlag[fds[index].fd] == 3)

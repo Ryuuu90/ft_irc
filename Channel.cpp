@@ -15,7 +15,8 @@ std::string	Channel::get_topic()const
     return(topic);
 }
 
-void	Channel::set_topic(std::string Topic){
+void	Channel::set_topic(std::string Topic)
+{
     topic = Topic;
 }
 
@@ -29,18 +30,6 @@ Channel::Channel(std::string Name)
 	restrictionsTOPIC =false;
 	keyPass =false;
 	password = "";
-    if((Name[0] != '#' && Name[0] != '&')|| Name.size() < 2)
-        throw(std::invalid_argument("Name does not match the requirement!!!"));
-    else
-    {
-        size_t i = 1;
-        while(i < Name.size())
-        {
-            if(std::isspace(Name[i]) || Name[i] == ',' || Name[i] == '\a')
-                throw(std::invalid_argument("Name does not match the requirement!!!"));
-            i++;
-        }
-    }
     name = Name;
 }
 Channel::~Channel(){}
@@ -70,7 +59,10 @@ std::vector<std::vector<std::string> > &split_input(std::string input ,std::vect
         if(input[0] == '+' || input[0] == '-')
         {
             if(!check_modes(input))
-                throw(std::invalid_argument(""));
+            {
+                vect.clear();
+                return (vect);
+            }
             vect[0].push_back(input);
         }
         else
@@ -93,7 +85,6 @@ void Channel::mode(std::string input, int index)
 		response<<this->name<<" ";
         if (invite || limit || keyPass || restrictionsTOPIC || operators.find(index)!= operators.end())
             response <<"+";
-        // else return;
 		if(invite)
 			response<<"i";
 		if(keyPass)
@@ -107,12 +98,7 @@ void Channel::mode(std::string input, int index)
 		if(limit)
 			response<<"l "<<limits;
 		response<<"\r\n";
-		// for(IT = Clients.begin(); IT != Clients.end(); IT ++)
-		// {
 		send(index,response.str().c_str(),response.str().size(), 0);
-			//:mokhalil!mokha@example.com MODE #channel +i
-		// }
-		// 
         return;
 	}
     if(operators.find(index) == operators.end())
@@ -126,6 +112,12 @@ void Channel::mode(std::string input, int index)
     }
     std::vector<std::vector<std::string> > vect;
     vect = split_input(input,vect);
+    if (vect.empty())
+    {
+        response.clear();
+        response << ":irc.example.com 472 " << Clients[index].nickNameGetter() << " " << input << " :is unknown mode char to me\r\n";
+        return;
+    }
     size_t i = 0;
     while (i < vect.size())
     {
@@ -155,11 +147,9 @@ void Channel::mode(std::string input, int index)
 					response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
     				response<<" MODE "<<this->name;
 					response<<" +i"<<"\r\n";
-					// if();
 					for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 					{
 						send(IT->first,response.str().c_str(),response.str().size(), 0);
-						//:mokhalil!mokha@example.com MODE #channel +i
 					}
                 }
                 else if(vect[0][i][j] == 't')
@@ -169,11 +159,9 @@ void Channel::mode(std::string input, int index)
 					response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
     				response<<" MODE "<<this->name;
 					response<<" +t"<<"\r\n";
-					// if();
 					for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 					{
 						send(IT->first,response.str().c_str(),response.str().size(), 0);
-						//:mokhalil!mokha@example.com MODE #channel +i
 					}
 				}
                 else if(vect[0][i][j] == 'k')
@@ -186,11 +174,9 @@ void Channel::mode(std::string input, int index)
 						response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
     					response<<" MODE "<<this->name;
 						response<<" +k "<<"\r\n";
-						// if();
 						for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 						{
 							send(IT->first,response.str().c_str(),response.str().size(), 0);
-							//:mokhalil!mokha@example.com MODE #channel +i
 						}
                         k++;
                     }
@@ -213,11 +199,9 @@ void Channel::mode(std::string input, int index)
 							response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
     						response<<" MODE "<<this->name;
 							response<<" +o "<<it->second.nickNameGetter()<<"\r\n";
-							// if();
 							for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 							{
 								send(IT->first,response.str().c_str(),response.str().size(), 0);
-								//:mokhalil!mokha@example.com MODE #channel +i
 							}
                             operators[it->first] = it->second;
                             opCount++;
@@ -240,7 +224,6 @@ void Channel::mode(std::string input, int index)
                     {
                         std::cout<<vect[1][k];
 						std::stringstream digit(vect[1][k]);
-                        // limits = std::atoi(vect[1][k].c_str());
 						digit >>limits;
 							return;
                         if (limits <= 0 || digit.fail())
@@ -255,18 +238,16 @@ void Channel::mode(std::string input, int index)
 						response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
     					response<<" MODE "<<this->name;
 						response<<" +l "<<limits<<"\r\n";
-						// if();
 						for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 						{
 							send(IT->first,response.str().c_str(),response.str().size(), 0);
-							//:mokhalil!mokha@example.com MODE #channel +i
 						}
                         k++;
                     }
                     else
                     {
 						response.clear();
-						response<<":WEBSERV 696 "<<Clients[index].nickNameGetter()<<" "<<name<<" l undifined user :Invalid mode parameter\r\n";
+						response<<":WEBSERV 696 "<<Clients[index].nickNameGetter()<<" "<<name<<" l undifined limit :Invalid mode parameter\r\n";
 						send(index,response.str().c_str(),response.str().size(), 0);
 						return;
 					}
@@ -289,7 +270,6 @@ void Channel::mode(std::string input, int index)
 					for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 					{
 						send(IT->first,response.str().c_str(),response.str().size(), 0);
-						//:mokhalil!mokha@example.com MODE #channel +i
 					}
 				}
                 else if(vect[0][i][j] == 't')
@@ -302,7 +282,6 @@ void Channel::mode(std::string input, int index)
 					for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 					{
 						send(IT->first,response.str().c_str(),response.str().size(), 0);
-						//:mokhalil!mokha@example.com MODE #channel +i
 					}
 				}
                 else if(vect[0][i][j] == 'k')
@@ -316,7 +295,6 @@ void Channel::mode(std::string input, int index)
 					for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 					{
 						send(IT->first,response.str().c_str(),response.str().size(), 0);
-						//:mokhalil!mokha@example.com MODE #channel +i
 					}
                 }
                 else if(vect[0][i][j] == 'o')
@@ -334,7 +312,6 @@ void Channel::mode(std::string input, int index)
 							for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 							{
 								send(IT->first,response.str().c_str(),response.str().size(), 0);
-								//:mokhalil!mokha@example.com MODE #channel +i
 							}
                             opCount--;
                             k++;
@@ -342,7 +319,12 @@ void Channel::mode(std::string input, int index)
                         }
                     }
                     if (it == Clients.end())
-                        throw(std::logic_error("invalid user name\r\n"));
+                    {
+						response.clear();
+						response<<":WEBSERV 696 "<<Clients[index].nickNameGetter()<<" "<<name<<" o undifined user :Invalid mode parameter\r\n";
+						send(index,response.str().c_str(),response.str().size(), 0);
+						return;
+					}
                 }
                 else if(vect[0][i][j] == 'l')
                 {
@@ -355,7 +337,6 @@ void Channel::mode(std::string input, int index)
 					for(IT = Clients.begin(); IT != Clients.end(); IT ++)
 					{
 						send(IT->first,response.str().c_str(),response.str().size(), 0);
-						//:mokhalil!mokha@example.com MODE #channel +i
 					}
                 }
                 j++;
@@ -403,23 +384,9 @@ void Channel::join(Client &client, int index, std::vector<std::string> params, s
             return;
         }
     }
-    if (keyPass == true) {
+    if (keyPass == true)
+    {
 		std::cout << "Index    -->"<<paramsIndex <<"---->"<<params.size()<< std::endl;
-        // if (paramsIndex >= params.size()) {
-        //     //:irc.example.com 696 Dave #example k very long and improper key with spaces :Invalid mode parameter
-        //    joinError.clear();
-        //    joinError<<":WEBSERV 696 "<<client.nickNameGetter()<<" "<<name<<" k undifined key :Invalid mode parameter\r\n";
-        //    send(index, joinError.str().c_str(), joinError.str().size(), 0);
-        //     return;
-        // } 
-        // if (check_join_params(params[paramsIndex]))
-        // {
-		// 	std::cout<<"1"<<params[paramsIndex]<<"1\n";
-        //     joinError.clear();
-        //     joinError<<":WEBSERV 696 "<<client.nickNameGetter()<<" "<<name<<" k key with spaces :Invalid mode parameter\r\n";
-        //     send(index, joinError.str().c_str(), joinError.str().size(), 0);
-        //     return;    
-        // }
         if (paramsIndex >= params.size() || password.compare(params[paramsIndex])) {
 			std::cout<<"inside channel "<<client.nickNameGetter()<<std::endl;
             joinError.clear();
@@ -438,10 +405,6 @@ void Channel::join(Client &client, int index, std::vector<std::string> params, s
 	    	opCount++;
         }
         Clients[index] = client;
-
-        // Get and set the client's hostname
-        // client.hostname = getClientHostname(client.IpAddressGetter());
-
         // Notify all users in the channel about the new join
         std::ostringstream joinNotif;
         joinNotif << ":" << client.nickNameGetter() << "!" << client.userNameGetter() << "@" << client.hostname << " JOIN :" << name << "\r\n";
@@ -449,8 +412,6 @@ void Channel::join(Client &client, int index, std::vector<std::string> params, s
         for (it = Clients.begin(); it != Clients.end(); ++it) {
             send(it->first, joinNotif.str().c_str(), joinNotif.str().size(), 0);
         }
-        // Send the JOIN response to the new client
-        // send(index, joinNotif.str().c_str(), joinNotif.str().size(), 0);
 
         // If a topic is set, send RPL_TOPIC (332)
         if (!topic.empty()) {
@@ -460,7 +421,6 @@ void Channel::join(Client &client, int index, std::vector<std::string> params, s
             send(index, topicResponse.str().c_str(), topicResponse.str().size(), 0);
         } 
         // RPL_NAMREPLY (353) - List of users in the channel
-		// Kayn chi concept hnaya message ki trprinta check top dial terminal f blasst topic
         std::ostringstream namesResponse;
         namesResponse << ":WEBSERV 353 " << client.nickNameGetter() << " = " << this->name << " :";
         std::map<int,Client>::iterator next;
@@ -476,25 +436,14 @@ void Channel::join(Client &client, int index, std::vector<std::string> params, s
             if (next != Clients.end()) {
                 namesResponse << " ";
             }
-            // if (operators.find(it->first) != operators.end())
-            //     namesResponse<<"@";
-            // namesResponse << it->second.nickNameGetter();
-            // next = it;
-            // next++;
-            // if (next != Clients.end())
-            //     namesResponse <<" ";
         }
         namesResponse << "\r\n";
 
         // RPL_ENDOFNAMES (366) - End of the list of users
         std::ostringstream endNamesResponse;
         endNamesResponse << ":WEBSERV 366 " << client.nickNameGetter() << " " << this->name << " :End of /NAMES list\r\n";
-        // for (it = Clients.begin(); it != Clients.end(); ++it)
-        // {
             send(index, namesResponse.str().c_str(), namesResponse.str().size(), 0);
             send(index, endNamesResponse.str().c_str(), endNamesResponse.str().size(), 0);
-        // }
-
 		// If the client is an operator, send the mode change notification
         if (operators.find(index) != operators.end()) {
             std::ostringstream modeChangeResponse;

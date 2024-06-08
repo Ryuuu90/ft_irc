@@ -79,18 +79,33 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                     if(it == Channels.end())
                     {
                         std::cout<<""<<std::endl;
-                        try
-                        {
-                            std::cout<<"test TEST"<<std::endl;
+            
+                            if(params[0][i].size() < 2)
+                            {
+                                joinError.clear();
+                                joinError << ":irc.example.com ERROR " << Clients[fds[index].fd].nickNameGetter() << " :" << "Invalid channel name" << "\r\n";
+                                send(fds[index].fd, joinError.str().c_str(), joinError.str().size(), 0);
+                                return;
+                            }
+                            else
+                            {
+                                
+                                size_t i = 1;
+                                while(i < params[0][i].size())
+                                {
+                                    if(std::isspace(params[0][i][i]) || params[0][i][i] == ',' || params[0][i][i] == '\a')
+                                    {
+                                        joinError.clear();
+                                        joinError << ":irc.example.com ERROR " << Clients[fds[index].fd].nickNameGetter() << " :" << "Invalid channel name" << "\r\n";
+                                        send(fds[index].fd, joinError.str().c_str(), joinError.str().size(), 0);
+                                        return;
+                                    }
+                                    i++;
+                                }
+                            }
                             if(params[0][i][0] != '#')
                                 params[0][i] = std::string("#" + params[0][i]);
                             Channels[params[0][i]]= Channel(params[0][i]);
-                        }
-                        catch(std::exception &e)
-                        {
-                            std::cout<<e.what()<<std::endl;
-                            return;
-                        }
                     }
                     // std::map<int, Client>::iterator it2 = Clients.find(fds[index].fd);
                     std::string input;

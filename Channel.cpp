@@ -115,22 +115,10 @@ void Channel::mode(std::string input, int index)
     if (vect.empty())
     {
         response.clear();
-        response << ":irc.example.com 472 " << Clients[index].nickNameGetter() << " " << input << " :is unknown mode char to me\r\n";
+        response << ":WEBSERV 472 " << Clients[index].nickNameGetter() << " " << input << " :is unknown mode char to me\r\n";
         return;
     }
     size_t i = 0;
-    while (i < vect.size())
-    {
-        size_t l = 0;
-        while(l < vect[i].size())
-        {
-            std::cout<<vect[i][l]<<std::endl;
-            l++;
-        }
-        std::cout<<std::endl;
-        i++;
-    }
-	i = 0;
     size_t k = 0;
     while(i < vect[0].size())
     {
@@ -206,7 +194,7 @@ void Channel::mode(std::string input, int index)
                             operators[it->first] = it->second;
                             opCount++;
                             k++;
-                            break;
+                            // break;
                         }
                     }
                     if (it == Clients.end())
@@ -222,10 +210,8 @@ void Channel::mode(std::string input, int index)
                     //liberachat
                     if(!vect[1].empty() && k < vect[1].size())
                     {
-                        std::cout<<vect[1][k];
 						std::stringstream digit(vect[1][k]);
 						digit >>limits;
-							return;
                         if (limits <= 0 || digit.fail())
                         {
 						    response.clear();
@@ -346,7 +332,6 @@ void Channel::mode(std::string input, int index)
         i++;
     }
 
- std::cout<<"bool invite "<<invite<<" keypass "<<password<<" bool key "<<keyPass<<" limits "<<limits<<std::endl;
 }
 
 int check_join_params(std::string params)
@@ -386,15 +371,12 @@ void Channel::join(Client &client, int index, std::vector<std::string> params, s
     }
     if (keyPass == true)
     {
-		std::cout << "Index    -->"<<paramsIndex <<"---->"<<params.size()<< std::endl;
         if (paramsIndex >= params.size() || password.compare(params[paramsIndex])) {
-			std::cout<<"inside channel "<<client.nickNameGetter()<<std::endl;
             joinError.clear();
             joinError<<":WEBSERV 475 "<<client.nickNameGetter()<<" "<<name<<" :Cannot join channel (+k) - bad key\r\n";
             send(index, joinError.str().c_str(), joinError.str().size(), 0);
             return;
         }
-		std::cout<<"hada    -->"<<params[paramsIndex]<<std::endl;
     }
     
     if (Clients.find(index) == Clients.end())
@@ -416,7 +398,6 @@ void Channel::join(Client &client, int index, std::vector<std::string> params, s
         // If a topic is set, send RPL_TOPIC (332)
         if (!topic.empty()) {
             std::ostringstream topicResponse;
-			std::cout<<"----00 "<<topic<<"1"<<std::endl;
             topicResponse << ":WEBSERV 332 " << client.nickNameGetter() << " " << name << " :" << topic << "\r\n";
             send(index, topicResponse.str().c_str(), topicResponse.str().size(), 0);
         } 

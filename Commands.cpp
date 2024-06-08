@@ -170,7 +170,6 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
             {
                 std::cerr << e.what() << '\n';
             }
-            std::cout<<"bool invite "<<Channels[channelName].invite<<" keypass "<<Channels[channelName].password<<" limits "<<Channels[channelName].limits<<std::endl;
         }
     }
     else if (str == "KICK")
@@ -303,7 +302,6 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                 std::string topic;
                 std::getline(ss, topic);
                 std::string topicSub = topic.substr(0, topic.size() - 1);
-                std::cout << "sub[" << topicSub << "]" << std::endl;
 
                 if (topicSub.empty() && Channels[str].topic.empty())
                 {
@@ -313,31 +311,19 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                 }
                 else if (topicSub.empty())
                 {
-                    std::cout << "Topic: [" << Channels[str].topic << "]" << std::endl;
                     std::string msg = ":WEBSERV 332 " + Clients[fds[index].fd].nickNameGetter() + " " + str + " :" + Channels[str].topic + "\r\n";
                     send(fds[index].fd, msg.c_str(), msg.size(), 0);
                     return;
                 }
                 else
                 {
-                    std::cout << "--->TopicSub[" << topicSub << "]" << std::endl;
                     if (topicSub[0] == ' ' && topicSub[1] == ':')
-                    {
                         Channels[str].topic = topicSub.substr(2);
-                    }
                     else
-                    {
                         Channels[str].topic = topicSub.substr(1);
-                    }
-
-                    std::cout << "Updated Topic: [" << Channels[str].topic << "]" << std::endl;
 
                     // Sending TOPIC change notification to all users in the channel
-                    std::cout << "...........host/"<< Server::Clients[fds[index].fd].hostname<<"/............." << std::endl;
                     std::ostringstream topicResponseAll;
-                    //get hostname
-                    // Clients[fds[index].fd].hostname = getClientHostname(Clients[fds[index].fd].IpAddressGetter());
-                        std::cout << "ip/"<< Server::Clients[fds[index].fd].IpAddressGetter() << std::endl;
 
                     topicResponseAll << ":" << Clients[fds[index].fd].nickNameGetter() << "!" << Clients[fds[index].fd].userNameGetter() << "@" << Server::Clients[fds[index].fd].hostname << " TOPIC " << str << " :" << Channels[str].topic << "\r\n";
                     for (std::map<int, Client>::iterator it = Channels[str].Clients.begin(); it != Channels[str].Clients.end(); ++it)
@@ -420,11 +406,6 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                         confirmInvite << ":WEBSERV 341 " << Clients[fds[index].fd].nickNameGetter() << " " << str << " " << targetChannel << "\r\n";
                         send(fds[index].fd, confirmInvite.str().c_str(), confirmInvite.str().size(), 0);
 
-                        std::map<int, Client>::iterator it;
-                        for (it = Channels[targetChannel].inviteClients.begin(); it != Channels[targetChannel].inviteClients.end(); it++)
-                        {
-                            std::cout << it->first << "*-*-* " << it->second.nickNameGetter() << std::endl;
-                        }
                         return;
                     }
                 }
@@ -452,7 +433,6 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
     else if(str == "PRIVMSG")
     {
         ss>>str;
-        std::cout<<"--->"<<str<<std::endl;
         if(str[0] == '#')
         {
             if(Channels.find(str) != Channels.end())
@@ -474,7 +454,6 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                     std::getline(ss, line);
                     line.erase(line.end() - 1);
                     msg = msg1 + line;
-                    std::cout<<"here channel ;"<<msg<<std::endl;
                 }
                 else
                     msg = msg1;
@@ -484,7 +463,6 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                 response << ":" <<Clients[fds[index].fd].nickNameGetter() << " PRIVMSG " << str << " :" << msg << "\r\n";
                 for(IT1 = Channels[str].Clients.begin(); IT1 != Channels[str].Clients.end(); IT1++)
                 {
-                    std::cout<<"--->"<<IT1->first<<std::endl;
                     if (IT1->first != fds[index].fd)
                         send(IT1->first, response.str().c_str(), response.str().size(), 0);
                 }
@@ -495,7 +473,6 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
             std::map<int ,Client>::iterator it8;
             for(it8 = Clients.begin(); it8 != Clients.end(); it8++)
             {
-                std::cout<<it8->second.nickNameGetter()<<" ";
                 if (!it8->second.nickNameGetter().compare(str))
                 {
                     std::string recipient = str;
@@ -508,7 +485,6 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                         std::getline(ss, line);
                         line.erase(line.end() - 1);
                         msg = str + line;
-                        std::cout<<"here user; "<<msg<<std::endl;
                     }
                     else
                         msg = str;        
@@ -523,8 +499,6 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
             {
                 std::ostringstream response;
                 response << ":WEBSERV 406 " << Clients[fds[index].fd].nickNameGetter() << " " << str << " :There was no such nickname\r\n";
-
-                // Send the response to the client
                 send(fds[index].fd, response.str().c_str(), response.str().size(), 0);
             }
         }

@@ -178,10 +178,10 @@ void Channel::mode(std::string input, int index)
 				}
                 else if(vect[0][i][j] == 'k')
                 {
-                    keyPass = true;
                     if(!vect[1].empty() && k < vect[1].size())
                     {
                         password = vect[1][k];
+                    	keyPass = true;
 						response.clear();
 						response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
     					response<<" MODE "<<this->name;
@@ -194,6 +194,13 @@ void Channel::mode(std::string input, int index)
 						}
                         k++;
                     }
+					else
+					{
+						response.clear();
+						response<<":WEBSERV 696 "<<Clients[index].nickNameGetter()<<" "<<name<<" k undifined key :Invalid mode parameter\r\n";
+						send(index,response.str().c_str(),response.str().size(), 0);
+						return;
+					}
                 }
                 else if(vect[0][i][j] == 'o')
                 {
@@ -358,8 +365,9 @@ int check_join_params(std::string params)
     return(1);
 }
 
-void Channel::join(Client &client, int index, std::vector<std::string> params, size_t &paramsIndex) {
-     std::ostringstream joinError;
+void Channel::join(Client &client, int index, std::vector<std::string> params, size_t &paramsIndex)
+{
+	std::ostringstream joinError;
     if (invite == true) {
         if (inviteClients.find(index) == inviteClients.end()) {     
         joinError.clear();
@@ -379,22 +387,24 @@ void Channel::join(Client &client, int index, std::vector<std::string> params, s
         }
     }
     if (keyPass == true) {
-		std::cout << "Index    -->"<<paramsIndex << std::endl;
-        if (paramsIndex >= params.size()) {
-            //:irc.example.com 696 Dave #example k very long and improper key with spaces :Invalid mode parameter
-           joinError.clear();
-           joinError<<":WEBSERV 696 "<<client.nickNameGetter()<<" "<<name<<" k undifined key :Invalid mode parameter\r\n";
-           send(index, joinError.str().c_str(), joinError.str().size(), 0);
-            return;
-        } 
-        else if (check_join_params(params[paramsIndex]))
-        {
-            joinError.clear();
-           joinError<<":WEBSERV 696 "<<client.nickNameGetter()<<" "<<name<<" k key with spaces :Invalid mode parameter\r\n";
-           send(index, joinError.str().c_str(), joinError.str().size(), 0);
-            return;    
-        }
-        else if (password.compare(params[paramsIndex])) {
+		std::cout << "Index    -->"<<paramsIndex <<"---->"<<params.size()<< std::endl;
+        // if (paramsIndex >= params.size()) {
+        //     //:irc.example.com 696 Dave #example k very long and improper key with spaces :Invalid mode parameter
+        //    joinError.clear();
+        //    joinError<<":WEBSERV 696 "<<client.nickNameGetter()<<" "<<name<<" k undifined key :Invalid mode parameter\r\n";
+        //    send(index, joinError.str().c_str(), joinError.str().size(), 0);
+        //     return;
+        // } 
+        // if (check_join_params(params[paramsIndex]))
+        // {
+		// 	std::cout<<"1"<<params[paramsIndex]<<"1\n";
+        //     joinError.clear();
+        //     joinError<<":WEBSERV 696 "<<client.nickNameGetter()<<" "<<name<<" k key with spaces :Invalid mode parameter\r\n";
+        //     send(index, joinError.str().c_str(), joinError.str().size(), 0);
+        //     return;    
+        // }
+        if (paramsIndex >= params.size() || password.compare(params[paramsIndex])) {
+			std::cout<<"inside channel "<<client.nickNameGetter()<<std::endl;
             joinError.clear();
             joinError<<":WEBSERV 475 "<<client.nickNameGetter()<<" "<<name<<" :Cannot join channel (+k) - bad key\r\n";
             send(index, joinError.str().c_str(), joinError.str().size(), 0);

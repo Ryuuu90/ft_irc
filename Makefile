@@ -1,4 +1,4 @@
-NAME = Server
+NAME = ircserv
 SRC = Client.cpp\
 	Server.cpp\
 	Channel.cpp\
@@ -10,7 +10,7 @@ OSRC = $(SRC:.cpp=.o)
 %.o : %.cpp
 	@c++ -Wall -Wextra -Werror -std=c++98  -c $(SRC)
 $(NAME) : $(OSRC)
-	@c++ -fsanitize=address -g3 $(OSRC) -o $(NAME)
+	@c++  $(OSRC) -o $(NAME)
 	@echo "\033[1;32mServer is ready to execute ✅\033[0m"
 all : $(NAME)
 clean :

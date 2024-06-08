@@ -15,7 +15,6 @@ size_t Server::count_param(std::vector<std::string> chls)
         i++;
     }
     return(count);
-    
 }
 
 void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
@@ -83,6 +82,8 @@ void Server::commands(std::string msg,std::vector<struct pollfd> fds, int index)
                         try
                         {
                             std::cout<<"test TEST"<<std::endl;
+                            if(params[0][i][0] != '#')
+                                params[0][i] = std::string("#" + params[0][i]);
                             Channels[params[0][i]]= Channel(params[0][i]);
                         }
                         catch(std::exception &e)

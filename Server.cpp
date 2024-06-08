@@ -9,8 +9,8 @@ Server::Server(int port, std::string password)
     this->timeStr = ctime(&currentTime);
     this->timeStr.erase(this->timeStr.end() - 1);
     serverSocket();
-    std::cout << GREEN << "Server (" << this->sockserv << ") is connected." << RESET << std::endl;
-    std::cout << YELLOW << "The server is waiting for new connections..." << RESET << std::endl;
+    std::cout << GREEN << "Server WEBSERV is connected." << RESET << std::endl;
+    std::cout << YELLOW << "WEBSERV is waiting for new connections..." << RESET << std::endl;
     while(true)
     {
         if(poll(&fds[0], fds.size(), -1) == -1)
@@ -104,21 +104,21 @@ void Server::UserCommand(int fd, std::vector<std::string> &vec)
         send(fd, msg.c_str(), msg.size(), 0);
     }
     if(vec[0] == "USER" && vec.size() < 5)
-        return ParamMsgClient(fd, vec[0], " :Not enough parameters\r\n", 461);
+        return ParamMsgClient(fd, vec[0], " :Not enough parameters\033[0m\r\n", 461);
     if(vec[0] == "USER" && vec.size() > 6)
-        return ParamMsgClient(fd, vec[0], " :Too much parameters\r\n", 0);
+        return ParamMsgClient(fd, vec[0], " :Too much parameters\033[0m\r\n", 0);
     if(vec[0] == "USER" && (vec.size() == 5 || vec.size() == 6))
     {
         if(vec[2] != "0" || vec[3] != "*")
-            return ParamMsgClient(fd, vec[0], " :The third paramter should be '0' and the fourth parameter should be '*'.\r\n", 0);
+            return ParamMsgClient(fd, vec[0], " :The third paramter should be '0' and the fourth parameter should be '*'.\033[0m\r\n", 0);
         else if(vec[4][0] != ':')
-            return ParamMsgClient(fd, vec[0], " :The real should prefixed with a colon(:).\r\n", 0);
+            return ParamMsgClient(fd, vec[0], " :The real should prefixed with a colon(:).\033[0m\r\n", 0);
         else
         {
             Clients[fd].userNameSetter(vec[1]);
             vec[4].erase(vec[4].begin());
             if(vec[4].empty())
-                return ParamMsgClient(fd, vec[0], " :Enter your realname.\r\n", 0);
+                return ParamMsgClient(fd, vec[0], " :Enter your realname.\033[0m\r\n", 0);
             else if(vec.size() == 5)
                 Clients[fd].realNameSetter(vec[4]);
             else
@@ -143,7 +143,7 @@ void Server::NickCommand(int fd, std::vector<std::string> &vec)
     if(vec[0] == "NICK" && vec.size() == 1)
         return msgToClient(fd, " :\033[1;31mNo nickname given\033[0m\r\n", 431);
     if(vec[0] == "NICK" && vec.size() > 2)
-        return ParamMsgClient(fd, vec[0], " :Too much parameters\r\n", 0);
+        return ParamMsgClient(fd, vec[0], " :Too much parameters\033[0m\r\n", 0);
     if(vec[0] == "NICK" && vec.size() == 2)
     {
         if(NickNameInUse(vec[1], fd))
@@ -317,20 +317,22 @@ std::vector<std::vector<std::string> > &split_Channels(std::string input, std::v
 bool Server::checkControlD(int rec)
 {
     std::cout << RED << buff << RESET << std::endl;
-    if(this->buff[rec - 1] != '\n')
+    if(rec > 0 && this->buff[rec - 1] != '\n')
     {
         this->joinFlag = 1;
-        this->join = buff;
+        this->join += buff;
         return true;
     }
-    if(this->joinFlag == 1)
+    if(this->joinFlag)
     {
-        this->join = this->join + buff;
+        this->join += buff;
         this->joinFlag = 0;
     }
     else
         this->join = buff;
     return false;
+    // if(this->buff[rec - 1] == '\n')
+    // return true;
 }
 void Server::receiveData(int index)
 {
@@ -338,6 +340,8 @@ void Server::receiveData(int index)
     int rec;
     if((rec = recv(this->fds[index].fd, this->buff, sizeof(this->buff) - 1, 0)) <= 0)
     {
+        if(this->joinFlag)
+            this->join.clear();
         std::cerr << MAGENTA << "Client (" << this->fds[index].fd << ") Disconnected." << RESET << std::endl;
         close(this->fds[index].fd);
         this->fds.erase(this->fds.begin() + index);
@@ -370,5 +374,6 @@ void Server::receiveData(int index)
         }
         if(this->authenFlag[fds[index].fd] >= 4)
             commands(msg,fds, index);
+        this->join.clear();
     }
 }

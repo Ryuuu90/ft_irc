@@ -226,7 +226,12 @@ void Channel::mode(std::string input, int index)
                         }
                     }
                     if (it == Clients.end())
-                        exit(0);
+					{
+						response.clear();
+						response<<":WEBSERV 696 "<<Clients[index].nickNameGetter()<<" "<<name<<" o undifined user :Invalid mode parameter\r\n";
+						send(index,response.str().c_str(),response.str().size(), 0);
+						return;
+					}
                 }
                 else if(vect[0][i][j] == 'l')
                 {
@@ -237,9 +242,14 @@ void Channel::mode(std::string input, int index)
 						std::stringstream digit(vect[1][k]);
                         // limits = std::atoi(vect[1][k].c_str());
 						digit >>limits;
-						if(digit.fail())
 							return;
-                        // if (limits <= 0);
+                        if (limits <= 0 || digit.fail())
+                        {
+						    response.clear();
+						    response<<":WEBSERV 696 "<<Clients[index].nickNameGetter()<<" "<<name<<" l bad limit :Invalid mode parameter\r\n";
+						    send(index,response.str().c_str(),response.str().size(), 0);
+						    return;
+					    }
                     	limit = true;
 						response.clear();
 						response<<":"<<Clients[index].nickNameGetter()<<"!"<<Clients[index].userNameGetter()<<"@"<<getClientHostname(Clients[index].IpAddressGetter());
@@ -253,6 +263,13 @@ void Channel::mode(std::string input, int index)
 						}
                         k++;
                     }
+                    else
+                    {
+						response.clear();
+						response<<":WEBSERV 696 "<<Clients[index].nickNameGetter()<<" "<<name<<" l undifined user :Invalid mode parameter\r\n";
+						send(index,response.str().c_str(),response.str().size(), 0);
+						return;
+					}
                 }
                 j++;
             }
@@ -305,9 +322,9 @@ void Channel::mode(std::string input, int index)
                 else if(vect[0][i][j] == 'o')
                 {
                     std::map<int, Client>::iterator it;
-                    for (it = Clients.begin(); it != Clients.end() ; it++)
+                    for (it = operators.begin(); it != operators.end() ; it++)
                     {
-                        if (k < vect[1].size() && (it->second.nickNameGetter() == vect[1][k]))
+                        if (k < vect[1].size() && (it->second.nickNameGetter() == vect[1][k]) && operators.size() > 1)
                         {
                             operators.erase(it);
 							response.clear();
